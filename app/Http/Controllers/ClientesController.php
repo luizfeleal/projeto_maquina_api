@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Clientes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+
+
 
 class ClientesController extends Controller
 {
@@ -45,7 +50,7 @@ class ClientesController extends Controller
                 $clientes = new Clientes();
                 $clientes->fill($dados);
                 $clientes->save();
-                return response()->json(['message' => 'Cliente cadastrado com sucesso!'], 200);
+                return response()->json(['message' => 'Cliente cadastrado com sucesso!', 'response' => $clientes], 201);
             });
 
         } catch (ValidationException $e) {
@@ -64,7 +69,7 @@ class ClientesController extends Controller
     public function show($id)
     {
         try {
-            $cliente = CLiente::find($id);
+            $cliente = Clientes::find($id);
 
             if(!$cliente) {
                 return response()->json(["response" => "Cliente não encontrado"], 404);
@@ -88,19 +93,14 @@ class ClientesController extends Controller
         try{
 
             $dados = $request->all();
-            $validator = Validator::make($dados, Clientes::rules(), CLientes::feedback());
-            //$validatedData = $request->validate((new Usuarios)->rules(), (new Usuarios)->feedback());
 
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 400);
-            }
-            return DB::transaction(function() use ($request, $id){
-                $cliente = Usuarios::findOrFail($id);
+            return DB::transaction(function() use ($dados, $id){
+                $cliente = Clientes::findOrFail($id);
 
-                $cliente->fill($request);
+                $cliente->fill($dados);
                 $cliente->save();
 
-                return $cliente;
+                return response()->json(['message' => 'Cliente atualizado com sucesso!', 'response' => $cliente], 200);
             });
         }catch(\Exception $e) {
             return response()->json(["response" => "Houve um erro ao tentar atualizar o cliente de id: $id.", "error" => $e->getMessage()], 500);
