@@ -28,7 +28,9 @@ class UsuariosController extends Controller
     {
 
         try {
+
             $dados = $request->all();
+
             $validator = Validator::make($dados, Usuarios::rules(), Usuarios::feedback());
             //$validatedData = $request->validate((new Usuarios)->rules(), (new Usuarios)->feedback());
 
@@ -36,15 +38,16 @@ class UsuariosController extends Controller
                 return response()->json(['errors' => $validator->errors()], 400);
             }
 
+
             return DB::transaction(function () use ($dados) {
                 $usuario = new Usuarios();
                 $usuario->fill($dados);
                 $usuario->save();
-                return response()->json(['message' => 'Usuário cadastrado com sucesso!'], 200);
+                return response()->json(['message' => 'Usuário cadastrado com sucesso!' , 'response' => $usuario], 201);
             });
 
         } catch (ValidationException $e) {
-            return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 422);
+            return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 400);
         } catch (Exception $e) {
             return response()->json(['message' => 'Houve um erro ao tentar cadastrar o usuário.'], 500);
         }
@@ -78,20 +81,16 @@ class UsuariosController extends Controller
         try{
 
             $dados = $request->all();
-            $validator = Validator::make($dados, Usuarios::rules(), Usuarios::feedback());
-            //$validatedData = $request->validate((new Usuarios)->rules(), (new Usuarios)->feedback());
 
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 400);
-            }
 
             return DB::transaction(function() use ($dados, $id){
                 $usuario = Usuarios::findOrFail($id);
 
-                $usuario->fill($request);
+                $usuario->fill($dados);
                 $usuario->save();
 
-                return $usuario;
+                return response()->json(['message' => 'Usuário atualizado com sucesso!', 'response' => $usuario], 200);
+
             });
         }catch(\Exception $e) {
             return response()->json(["response" => "Houve um erro ao tentar atualizar o usuário de id: $id.", "error" => $e->getMessage()], 500);
