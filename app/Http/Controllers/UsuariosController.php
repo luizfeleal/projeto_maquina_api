@@ -18,9 +18,9 @@ class UsuariosController extends Controller
         try{
             $usuarios = Usuarios::all();
 
-            return $usuarios;
+            return response()->json($usuarios, 200);
         }catch(Exception $e){
-            return response()->json(500, 'Houve um erro ao tentar coletar os usuários.');
+            return response()->json('Houve um erro ao tentar coletar os usuários.', 500);
         }
     }
 
