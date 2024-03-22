@@ -14,8 +14,19 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::apiResource('usuarios','App\Http\Controllers\UsuariosController');
+Route::group(['middleware' => ['apiJwt']], function(){
+
+    Route::apiResource('usuarios','App\Http\Controllers\UsuariosController');
+    Route::apiResource('clientes','App\Http\Controllers\ClientesController');
+    Route::apiResource('maquinas','App\Http\Controllers\MaquinasController');
+    Route::apiResource('gruposAcesso','App\Http\Controllers\GruposAcessoController');
+    Route::apiResource('acessosTela','App\Http\Controllers\AcessosTelaController');
+    Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
+    Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
+});
+

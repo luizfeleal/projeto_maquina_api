@@ -5,8 +5,9 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ApiUsuariosTest extends TestCase
+class ApiExtratoClienteTest extends TestCase
 {
+
     public function setUp(): void
     {
         parent::setUp();
@@ -26,97 +27,91 @@ class ApiUsuariosTest extends TestCase
         // Armazena o token para uso nos testes
         $this->token = $token;
     }
+
     /** @test*/
-    public function post_users_with_empty_body_and_error_message()
+    public function post_client_extract_with_empty_body_and_error_message()
     {
+        // Você precisa acessar o token armazenado corretamente aqui
         $response = $this->withHeaders([
-            'Authorization' => 'Bearer '.$this->token
-        ])->post('/api/usuarios');
+            'Authorization' => 'Bearer '. $this->token,
+        ]);
+
+        $response = $this->post('/api/extratoCliente'); // Use $this->post para fazer a solicitação
 
         $response->assertStatus(400);
 
         $response->assertJson([
             "errors"=> [
-                "id_grupo_acesso"=> [
-                    "O campo id grupo acesso é obrigatório."
+                "extrato_operacao_tipo"=> [
+                    "O campo extrato operacao tipo é obrigatório."
                 ],
-                "id_cliente"=> [
-                    "O campo id cliente é obrigatório."
+                "extrato_operacao_valor"=> [
+                    "O campo extrato operacao valor é obrigatório."
                 ],
-                "usuario_nome"=> [
-                        "O campo usuario nome é obrigatório."
+                "extrato_operacao_status"=> [
+                    "O campo extrato operacao status é obrigatório."
                 ],
-                "usuario_email"=> [
-                    "O campo usuario email é obrigatório."
-                ],
-                "usuario_login"=> [
-                    "O campo usuario login é obrigatório."
-                ],
-                "usuario_senha"=> [
-                     "O campo usuario senha é obrigatório."
-                ]
             ]
         ]);
     }
 
     /** @test*/
 
-    public function post_users_with_correct_body_and_success_message(){
+    public function post_client_extract_with_correct_body_and_success_message(){
         $data = [
-            'id_grupo_acesso'   => 1,
-            'id_cliente'        => 1,
-            'usuario_nome'      => 'Usuário Nome Teste API',
-            'usuario_email'     => 'usuario@gmail.com',
-            'usuario_login'     => 'usuario1',
-            'usuario_senha'     => 'senha1'
+            'extrato_operacao_tipo'   => "Entrada",
+            'extrato_operacao_valor'   => "15.5",
+            'extrato_operacao_status'   => "Sucesso",
+            'extrato_operacao_saldo'   => "15.5",
         ];
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->post('/api/usuarios', $data);
+        ])->post('/api/extratoCliente', $data);
         $response->assertStatus(201);
         $response->assertJson([
-            "message" => "Usuário cadastrado com sucesso!",
+            "message" => "Operação cadastrada com sucesso no extrato!",
             "response" => $data
         ]);
     }
 
 
     /** @test*/
-    public function get_all_users()
+    public function get_all_client_extract()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios');
+        ])->get('/api/extratoCliente');
         $response->assertStatus(200);
     }
 
     /** @test*/
-    public function get_users_by_not_found_number_id()
+    public function get_client_extract_by_not_found_number_id()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios/9078');
+        ])->get('/api/extratoCliente/9078');
         $response->assertStatus(404);
     }
 
     /** @test*/
-    public function get_users_by_number_id()
+    public function get_client_extract_by_number_id()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios/1');
+        ])->get('/api/extratoCliente/1');
         $response->assertStatus(200);
     }
     /** @test*/
-    public function update_users_with_success()
+    public function update_client_extract_with_success()
     {
         $data = [
-            'usuario_nome'=> 'Usuário Teste PHPUNIT API',
+            'extrato_operacao_status'=> 'Devolução',
+            'extrato_operacao_saldo'=> '0.0',
         ];
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->put('/api/usuarios/1', $data);
+        ])->put('/api/extratoCliente/1', $data);
 
         $response->assertStatus(200);
     }

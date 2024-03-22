@@ -5,8 +5,9 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ApiUsuariosTest extends TestCase
+class ApiClientesTest extends TestCase
 {
+
     public function setUp(): void
     {
         parent::setUp();
@@ -26,34 +27,32 @@ class ApiUsuariosTest extends TestCase
         // Armazena o token para uso nos testes
         $this->token = $token;
     }
+
     /** @test*/
-    public function post_users_with_empty_body_and_error_message()
+    public function post_clients_with_empty_body_and_error_message()
     {
+        // Você precisa acessar o token armazenado corretamente aqui
         $response = $this->withHeaders([
-            'Authorization' => 'Bearer '.$this->token
-        ])->post('/api/usuarios');
+            'Authorization' => 'Bearer '. $this->token,
+        ]);
+
+        $response = $this->post('/api/clientes'); // Use $this->post para fazer a solicitação
 
         $response->assertStatus(400);
 
         $response->assertJson([
             "errors"=> [
-                "id_grupo_acesso"=> [
-                    "O campo id grupo acesso é obrigatório."
+                "cliente_nome"=> [
+                    "O campo cliente nome é obrigatório."
                 ],
-                "id_cliente"=> [
-                    "O campo id cliente é obrigatório."
+                "cliente_celular"=> [
+                    "O campo cliente celular é obrigatório."
                 ],
-                "usuario_nome"=> [
-                        "O campo usuario nome é obrigatório."
+                "cliente_email"=> [
+                    "O campo cliente email é obrigatório."
                 ],
-                "usuario_email"=> [
-                    "O campo usuario email é obrigatório."
-                ],
-                "usuario_login"=> [
-                    "O campo usuario login é obrigatório."
-                ],
-                "usuario_senha"=> [
-                     "O campo usuario senha é obrigatório."
+                "cliente_cpf_cnpj"=> [
+                    "O campo cliente cpf cnpj é obrigatório."
                 ]
             ]
         ]);
@@ -61,62 +60,60 @@ class ApiUsuariosTest extends TestCase
 
     /** @test*/
 
-    public function post_users_with_correct_body_and_success_message(){
+    public function post_clients_with_correct_body_and_success_message(){
         $data = [
-            'id_grupo_acesso'   => 1,
-            'id_cliente'        => 1,
-            'usuario_nome'      => 'Usuário Nome Teste API',
-            'usuario_email'     => 'usuario@gmail.com',
-            'usuario_login'     => 'usuario1',
-            'usuario_senha'     => 'senha1'
+            'cliente_nome'   => "Teste cliente nome pHpunit",
+            'cliente_celular'        => "21964183013",
+            'cliente_email'      => 'testephpunit@gmail.com',
+            'cliente_cpf_cnpj'     => '15798684792',
         ];
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->post('/api/usuarios', $data);
+        ])->post('/api/clientes', $data);
         $response->assertStatus(201);
         $response->assertJson([
-            "message" => "Usuário cadastrado com sucesso!",
+            "message" => "Cliente cadastrado com sucesso!",
             "response" => $data
         ]);
     }
 
 
     /** @test*/
-    public function get_all_users()
+    public function get_all_clients()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios');
+        ])->get('/api/clientes');
         $response->assertStatus(200);
     }
 
     /** @test*/
-    public function get_users_by_not_found_number_id()
+    public function get_clients_by_not_found_number_id()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios/9078');
+        ])->get('/api/clientes/9078');
         $response->assertStatus(404);
     }
 
     /** @test*/
-    public function get_users_by_number_id()
+    public function get_clients_by_number_id()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios/1');
+        ])->get('/api/clientes/1');
         $response->assertStatus(200);
     }
     /** @test*/
-    public function update_users_with_success()
+    public function update_clients_with_success()
     {
         $data = [
-            'usuario_nome'=> 'Usuário Teste PHPUNIT API',
+            'cliente_nome'=> 'Usuário Teste atualizar PHPUNIT API',
         ];
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->put('/api/usuarios/1', $data);
+        ])->put('/api/clientes/1', $data);
 
         $response->assertStatus(200);
     }

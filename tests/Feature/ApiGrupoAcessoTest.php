@@ -5,8 +5,9 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ApiUsuariosTest extends TestCase
+class ApiGruposAcessoTest extends TestCase
 {
+
     public function setUp(): void
     {
         parent::setUp();
@@ -26,34 +27,23 @@ class ApiUsuariosTest extends TestCase
         // Armazena o token para uso nos testes
         $this->token = $token;
     }
+
     /** @test*/
-    public function post_users_with_empty_body_and_error_message()
+    public function post_access_groups_with_empty_body_and_error_message()
     {
+        // Você precisa acessar o token armazenado corretamente aqui
         $response = $this->withHeaders([
-            'Authorization' => 'Bearer '.$this->token
-        ])->post('/api/usuarios');
+            'Authorization' => 'Bearer '. $this->token,
+        ]);
+
+        $response = $this->post('/api/gruposAcesso'); // Use $this->post para fazer a solicitação
 
         $response->assertStatus(400);
 
         $response->assertJson([
             "errors"=> [
-                "id_grupo_acesso"=> [
-                    "O campo id grupo acesso é obrigatório."
-                ],
-                "id_cliente"=> [
-                    "O campo id cliente é obrigatório."
-                ],
-                "usuario_nome"=> [
-                        "O campo usuario nome é obrigatório."
-                ],
-                "usuario_email"=> [
-                    "O campo usuario email é obrigatório."
-                ],
-                "usuario_login"=> [
-                    "O campo usuario login é obrigatório."
-                ],
-                "usuario_senha"=> [
-                     "O campo usuario senha é obrigatório."
+                "grupo_acesso_nome"=> [
+                    "O campo grupo acesso nome é obrigatório."
                 ]
             ]
         ]);
@@ -61,62 +51,57 @@ class ApiUsuariosTest extends TestCase
 
     /** @test*/
 
-    public function post_users_with_correct_body_and_success_message(){
+    public function post_access_groups_with_correct_body_and_success_message(){
         $data = [
-            'id_grupo_acesso'   => 1,
-            'id_cliente'        => 1,
-            'usuario_nome'      => 'Usuário Nome Teste API',
-            'usuario_email'     => 'usuario@gmail.com',
-            'usuario_login'     => 'usuario1',
-            'usuario_senha'     => 'senha1'
+            'grupo_acesso_nome'   => "Admin Teste",
         ];
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->post('/api/usuarios', $data);
+        ])->post('/api/gruposAcesso', $data);
         $response->assertStatus(201);
         $response->assertJson([
-            "message" => "Usuário cadastrado com sucesso!",
+            "message" => "Grupo de acesso cadastrado com sucesso!",
             "response" => $data
         ]);
     }
 
 
     /** @test*/
-    public function get_all_users()
+    public function get_all_access_groups()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios');
+        ])->get('/api/gruposAcesso');
         $response->assertStatus(200);
     }
 
     /** @test*/
-    public function get_users_by_not_found_number_id()
+    public function get_access_groups_by_not_found_number_id()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios/9078');
+        ])->get('/api/gruposAcesso/9078');
         $response->assertStatus(404);
     }
 
     /** @test*/
-    public function get_users_by_number_id()
+    public function get_access_groups_by_number_id()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->get('/api/usuarios/1');
+        ])->get('/api/gruposAcesso/1');
         $response->assertStatus(200);
     }
     /** @test*/
-    public function update_users_with_success()
+    public function update_access_groups_with_success()
     {
         $data = [
-            'usuario_nome'=> 'Usuário Teste PHPUNIT API',
+            'grupo_acesso_nome'=> 'Teste atualização grupo',
         ];
         $response = $this->withHeaders([
             'Authorization' => 'Bearer '.$this->token
-        ])->put('/api/usuarios/1', $data);
+        ])->put('/api/gruposAcesso/1', $data);
 
         $response->assertStatus(200);
     }
