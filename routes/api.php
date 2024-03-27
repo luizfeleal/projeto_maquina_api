@@ -28,5 +28,6 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('acessosTela','App\Http\Controllers\AcessosTelaController');
     Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
     Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
+    Route::apiResource('locais','App\Http\Controllers\LocaisController');
 });
 
