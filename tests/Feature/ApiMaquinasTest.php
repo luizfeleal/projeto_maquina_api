@@ -58,6 +58,7 @@ class ApiMaquinasTest extends TestCase
             'maquina_referencia'   => "Teste máquina referencia pHpunit",
             'maquina_nome'   => "Teste máquina nome pHpunit",
             'maquina_status'        => 0,
+            'id_local' => 1,
         ];
 
         $response = $this->withHeaders([

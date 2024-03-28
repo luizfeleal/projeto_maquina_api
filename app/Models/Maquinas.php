@@ -11,6 +11,7 @@ class Maquinas extends Model
     protected $primaryKey = 'id_maquina';
     public $timestamps = false;
     protected $fillable = [
+        'id_local',
         'maquina_referencia',
         'maquina_nome',
         'maquina_status',
