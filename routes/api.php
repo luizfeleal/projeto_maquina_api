@@ -29,5 +29,17 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
     Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
     Route::apiResource('locais','App\Http\Controllers\LocaisController');
+    Route::apiResource('QRCode','App\Http\Controllers\QrController');
+    Route::post('hardware/status', 'App\Http\Controllers\Hardware\StatusController@atualizarStatus');
+    Route::post('hardware/liberarJogada', 'App\Http\Controllers\Hardware\JogadasController@liberarJogada');
+
 });
+
+//Route::post('webhook/efi', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamento');
+
+Route::get('teste', function(){
+    return 'cheguei';
+});
+Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial');
+
 

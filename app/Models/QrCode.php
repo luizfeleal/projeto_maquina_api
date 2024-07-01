@@ -5,26 +5,27 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Maquinas extends Model
+class QrCode extends Model
 {
-    protected $table = 'maquinas';
-    protected $primaryKey = 'id_maquina';
+    protected $table = 'qr_code';
+    protected $primaryKey = 'id_qr';
     public $timestamps = false;
     protected $fillable = [
+        'id_location_efi',
+        'id_maquina',
         'id_local',
-        'id_placa',
-        'maquina_referencia',
-        'maquina_nome',
-        'maquina_status',
-        'maquina_ultimo_contato',
+        'qr_image',
+        'ativo'
     ];
 
     public static function rules($id = null)
      {
         return [
-            "maquina_nome"=> "required|string|max:255",
-            "maquina_status"=> "required|boolean",
-            "id_placa"=> "required",
+            "id_location_efi" => "required",
+            "id_maquina"=> "required",
+            "id_local" => "required",
+            "qr_image"=> "required",
+            "ativo" => "required"
         ];
      }
 
