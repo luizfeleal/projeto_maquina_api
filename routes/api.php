@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +17,24 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
+Route::post('/register', function (Request $request) {
+    // Validação dos dados recebidos (opcional)
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'password' => 'required|string|min:6',
+    ]);
+
+    // Criação do usuário
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+    ]);
+
+    // Retorna o usuário criado como JSON
+    return response()->json($user, 201);
+});
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
