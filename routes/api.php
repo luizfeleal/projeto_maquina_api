@@ -16,7 +16,19 @@ use Illuminate\Support\Facades\Hash;
 |
 */
 
-Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
+Route::group([
+
+    'middleware' => 'api',
+    'prefix' => 'auth'
+
+], function ($router) {
+
+    Route::post('login', 'pp\Http\Controllers\AuthController@login');
+
+
+});
+
+//Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
 Route::get('/register', function (Request $request) {
     // Validação dos dados recebidos (opcional)
     
