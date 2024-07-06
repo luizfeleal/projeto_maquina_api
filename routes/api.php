@@ -20,12 +20,11 @@ Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
 Route::get('/register', function (Request $request) {
     // Validação dos dados recebidos (opcional)
     
-
     // Criação do usuário
     return $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
+        'name' => 'Hardware',
+        'email' => "hardware_swiftpaysolucoes12tyhf@swiftpaysolucoes.com",
+        'password' => Hash::make('fjhk$re8teu*dh13')
     ]);
 
     // Retorna o usuário criado como JSON
