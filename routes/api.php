@@ -16,9 +16,7 @@ use Illuminate\Support\Facades\Hash;
 |
 */
 
-
-
-Route::get('auth/login', 'App\Http\Controllers\AuthController@login');
+Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
 Route::get('/register', function (Request $request) {
     // Validação dos dados recebidos (opcional)
     
@@ -26,7 +24,7 @@ Route::get('/register', function (Request $request) {
     return $user = User::create([
         'name' => 'Hardware',
         'email' => "hardware_swiftpaysolucoes12tyhf@swiftpaysolucoes.com",
-        'password' => Hash::make('fjhk$re8teu*dh13')
+        'password' => Hash::make('fjhk$re8teu*dh13'),
     ]);
 
     // Retorna o usuário criado como JSON
