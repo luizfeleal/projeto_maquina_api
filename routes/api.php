@@ -23,7 +23,7 @@ Route::group([
 
 ], function ($router) {
 
-    Route::get('login', 'app\Http\Controllers\AuthController@login');
+    Route::get('login', 'App\Http\Controllers\AuthController@login');
 
 
 });
