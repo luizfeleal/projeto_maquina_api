@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 */
 
 Route::get('auth/login', 'App\Http\Controllers\AuthController@login');
+Route::post('auth/logout', 'App\Http\Controllers\AuthController@logout');
 Route::get('/register', function (Request $request) {
     // Validação dos dados recebidos (opcional)
     
