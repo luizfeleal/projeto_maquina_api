@@ -19,7 +19,7 @@ class ExtratoMaquinaController extends Controller
     public function index()
     {
         try{
-            $extrato = ExtratoCliente::all();
+            $extrato = ExtratoMaquina::all();
 
             return response()->json($extrato, 200);
         }catch(Exception $e){
@@ -47,7 +47,7 @@ class ExtratoMaquinaController extends Controller
             }
 
             return DB::transaction(function () use ($dados) {
-                $extrato = new ExtratoCliente();
+                $extrato = new ExtratoMaquina();
                 $extrato->fill($dados);
                 $extrato->save();
                 return response()->json(['message' => 'Operação cadastrada com sucesso no extrato!', 'response' => $extrato], 201);
@@ -69,7 +69,7 @@ class ExtratoMaquinaController extends Controller
     public function show($id)
     {
         try {
-            $extrato = ExtratoCliente::find($id);
+            $extrato = ExtratoMaquina::find($id);
 
             if(!$extrato) {
                 return response()->json(["response" => "Operação não encontrada no extrato."], 404);
@@ -95,7 +95,7 @@ class ExtratoMaquinaController extends Controller
             $dados = $request->all();
 
             return DB::transaction(function() use ($dados, $id){
-                $extrato = Maquinas::findOrFail($id);
+                $extrato = ExtratoMaquinas::findOrFail($id);
 
                 $extrato->fill($dados);
                 $extrato->save();
