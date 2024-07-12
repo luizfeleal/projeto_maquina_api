@@ -22,7 +22,7 @@ class ExtratoMaquina extends Model
      {
         return [
             "extrato_operacao_tipo" => "required|string|max:10",
-            "extrato_operacao_valor"=> "required|string|max:10",
+            "extrato_operacao_valor"=> "required|integer|max:10",
             "extrato_operacao_status"=> "required|boolean",
         ];
      }

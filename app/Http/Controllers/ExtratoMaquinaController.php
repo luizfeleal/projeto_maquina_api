@@ -95,7 +95,7 @@ class ExtratoMaquinaController extends Controller
             $dados = $request->all();
 
             return DB::transaction(function() use ($dados, $id){
-                $extrato = ExtratoMaquinas::findOrFail($id);
+                $extrato = ExtratoMaquina::findOrFail($id);
 
                 $extrato->fill($dados);
                 $extrato->save();

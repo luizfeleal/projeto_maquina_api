@@ -1,59 +1,42 @@
 <?php
 
-namespace App\Http\Controllers\Efi\Webhooks;
-
-use App\Models\AcessosTela;
-use Illuminate\Http\Request;
+namespace App\Services\Efi;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
-
-
-class WebhookController extends Controller
+class LocationsService
 {
+
+
+    public static function coletarLocation(string $id = Null, string $token)
+    {
+        //ogsService::criar(array("id_usuario"=>session()->get('id_usuario'), "tabela"=>"tipo_endereco", "funcao"=>"coletar", "datahora"=>now()));
+
+        $url = "/v2/loc/" . $id;
+
+        // Inicializa a sessão cURL
+        $ch = curl_init($url);
+
+        curl_setopt_array(
+            $ch,
+            array(
+                CURLOPT_CUSTOMREQUEST => 'GET',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token]
+            )
+        );
+
+        $result = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
     
+        $resposta = json_decode($result);
 
-
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function processamentoRequisicaoInicial(Request $request)
-    {
-
-        try {
-            Log::info($request);
-            return response()->json([''], 200);
-
-        } catch (ValidationException $e) {
-            return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 422);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'Houve um erro ao tentar cadastrar a tela de acesso.'], 500);
-        }
+        return $resposta;
     }
 
-    public function processamentoRequisicaoPrincipal(Request $request)
+    public static function criarLocation(string $tipoCob, string $token)
     {
-
-        return response()->json(['message' => 'deu certo: '], 200);
-        try {
-            
-
-        } catch (ValidationException $e) {
-            return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 422);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'Houve um erro ao tentar cadastrar a tela de acesso.'], 500);
-        }
-    }
-
-    public function setarUrlWebhook(Request $request)
-    {
-        $token = AuthService::coletarToken();
 
         $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
 
@@ -65,13 +48,13 @@ class WebhookController extends Controller
             throw new \Exception("O arquivo de certificado não foi encontrado: " . $caminhoCertificado);
         }
 
-        $url = env('URL_EFI') . "/v2/webhook/:chave";
+        $url = env('URL_EFI') . "/v2/loc";
 
         // Inicializa a sessão cURL
         $ch = curl_init($url);
 
         $data = array(
-            "webhookUrl" => $tipoCob
+            "tipoCob" => $tipoCob
         );
 
         $data_string = json_encode($data);
@@ -101,7 +84,6 @@ class WebhookController extends Controller
         $resposta = json_decode($result);
 
         return $resposta;
+        
     }
-
-    
 }

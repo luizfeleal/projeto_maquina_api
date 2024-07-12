@@ -11,7 +11,7 @@ class QrCode extends Model
     protected $primaryKey = 'id_qr';
     public $timestamps = false;
     protected $fillable = [
-        'id_location_efi',
+        'id_chave_pix',
         'id_maquina',
         'id_local',
         'qr_image',
@@ -21,7 +21,7 @@ class QrCode extends Model
     public static function rules($id = null)
      {
         return [
-            "id_location_efi" => "required",
+            "id_chave_pix" => "required",
             "id_maquina"=> "required",
             "id_local" => "required",
             "qr_image"=> "required",

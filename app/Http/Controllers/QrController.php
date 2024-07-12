@@ -9,6 +9,8 @@ use App\Services\Efi\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Mpdf\QrCode\Qrcode as MpdfQrCode;
+use Mpdf\QrCode\Output;
 
 
 
@@ -44,24 +46,60 @@ class QrController extends Controller
         try {
             $dados = $request->all();
 
+            $id_local = $dados['select_local'];
+            $id_maquina = $dados['select_maquina'];
+
+
+            #COLETAR CHAVE PIX
+            #CASO NÃO TENHA, CRIAR A CHAVE NA EFÍ E REALIZAR O CADASTRO DA CHAVE NA BASE
+
+            $coletarChavePix = ChavePix::where('id_cliente', $id_cliente)->get();
+
+            if(empty($coletarChavePix)){
+                $criarChavePix = ChaveAleatoriaService::criarChaveAleatoria($id_cliente);
+
+                if($criarChavePix){
+                    $chavePix = $criarChavePix['chavePix'];
+                }else{
+                    throw new Exception();
+                }
+            }else{
+                $chavePix = $coletarChavePix['chave_pix'];
+            }
+
+            #RESGATAR NOME DO CLIENTE
+            $coletarNomeTitular = Clientes::find($id_cliente);
+            $nomeCliente = $coletarNomeTitular['cliente_nome'];
+
+            #GERAR TXID
+            $txid = (new QrCodeService)->criarTxid($id_placa);
+
+            $payload = (new QrCodeService)->setChavePix($chavePix)
+                                      ->setDescricao('')
+                                      ->setNomeTitularConta($nomeCliente)
+                                      ->setNomeCidadeTitularConta('')
+                                      ->setTxid('12')
+                                      ->setValorTransacao('');
+
+            $payloadQrCode = $payload->getPayload();
+                                  
+            $obQrCode = new MpdfQrCode($payloadQrCode);
+
+            $image = (new Output\Png)->output($obQrCode, 400);
+
+            $base64Imagem = base64_encode($Image);
+
+            //$token = AuthService::coletarToken();
+            
+            //Verifica se existe chave pix
 
             
 
-            $token = AuthService::coletarToken();
-        
-            $location = LocationsService::criarLocation("cobv", $token);
-
-            $idLocation = $location->id;
-
-
-
-            $qr = QrCodeService::criarQr($idLocation, $token);
-
             $dadosParaInserir = [
-                "id_location_efi" => $idLocation,
-                "id_maquina" => $dados['select_maquina'],
-                "id_local" => $dados['select_local'],
-                "qr_image" => $qr->imagemQrcode,
+                "id_chave_pix" => $id_chave_pix,
+                "id_maquina" => $id_maquina,
+                "id_local" => $id_local,
+                "qr_image" => $base64Imagem,
                 "ativo" => 1
             ]; 
 

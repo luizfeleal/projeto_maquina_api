@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 */
 
 Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
+Route::post('tokenefi', 'App\Http\Controllers\Efi\AuthController@auth');
 Route::post('auth/logout', 'App\Http\Controllers\AuthController@logout');
 Route::get('/register', function (Request $request) {
     // Validação dos dados recebidos (opcional)
