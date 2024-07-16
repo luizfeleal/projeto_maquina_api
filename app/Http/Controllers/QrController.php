@@ -62,6 +62,7 @@ class QrController extends Controller
                 $token = AuthService::coletarToken();
                 $criarChavePix = ChaveAleatoriaService::criarChaveAleatoria($id_cliente, $token);
 
+                return $criarChavePix;
                 if($criarChavePix){
                     $chavePix = $criarChavePix['chavePix'];
                 }else{
