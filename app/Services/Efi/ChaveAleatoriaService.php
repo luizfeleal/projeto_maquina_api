@@ -27,7 +27,6 @@ class ChaveAleatoriaService
         $ch = curl_init($url);
 
 
-        $data_string = json_encode($data);
         curl_setopt_array(
             $ch,
             array(
