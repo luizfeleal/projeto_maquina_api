@@ -6,7 +6,7 @@ use App\Models\QrCode;
 use App\Services\Efi\QrCodeService;
 use App\Services\Efi\LocationsService;
 use App\Services\Efi\ChaveAleatoriaService;
-use App\Services\Efi\ChavePix;
+use App\Models\ChavePix;
 use App\Services\Efi\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
