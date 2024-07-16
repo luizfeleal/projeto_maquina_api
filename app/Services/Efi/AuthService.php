@@ -20,7 +20,7 @@ class AuthService
 
         // Verifique se o arquivo realmente existe
         if (!file_exists($certificado)) {
-            throw new \Exception("O arquivo de certificado não foi encontrado: " . $caminhoCertificado);
+            throw new \Exception("O arquivo de certificado não foi encontrado: " . $certificado);
         }
 
         $cliente_id = "Client_Id_4234c0c63d5e67362cd20f7f2f467f25be4d36b7";
