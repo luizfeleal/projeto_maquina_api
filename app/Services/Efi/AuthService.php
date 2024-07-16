@@ -13,7 +13,7 @@ class AuthService
     {
         //LogsService::criar(array("id_usuario"=>session()->get('id_usuario'), "tabela"=>"tipo_endereco", "funcao"=>"coletar", "datahora"=>now()));
 
-        $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
+        $arquivo = "Certificados/Naise/homologacaoTesteNaise_cert.pem";
 
         // Obtém o caminho absoluto do arquivo de certificado
         $certificado = Storage::disk('local')->path($arquivo);
@@ -23,8 +23,8 @@ class AuthService
             throw new \Exception("O arquivo de certificado não foi encontrado: " . $certificado);
         }
 
-        $cliente_id = "Client_Id_4234c0c63d5e67362cd20f7f2f467f25be4d36b7";
-        $client_secret = "Client_Secret_16a1b84181cd7025ef5b8920bb53335dcb9892c1";
+        $cliente_id = "Client_Id_bffb22802f7b54fb94eb5ee161a29b9c1750feca";
+        $client_secret = "Client_Secret_7702d5a42f90462ca9d47f4a6bf0c984e14c3aa0";
 
         $credenciaisBase64 = base64_encode($cliente_id . ":" . $client_secret);
 
