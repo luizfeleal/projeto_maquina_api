@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\QrCode;
 use App\Services\Efi\QrCodeService;
 use App\Services\Efi\LocationsService;
+use App\Services\Efi\ChaveAleatoriaService;
+use App\Services\Efi\ChavePix;
 use App\Services\Efi\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,8 +58,10 @@ class QrController extends Controller
             $coletarChavePix = ChavePix::where('id_cliente', $id_cliente)->get();
 
             if(empty($coletarChavePix)){
-                $criarChavePix = ChaveAleatoriaService::criarChaveAleatoria($id_cliente);
+                $token = AuthService::coletarToken();
+                $criarChavePix = ChaveAleatoriaService::criarChaveAleatoria($id_cliente, $token);
 
+                return $criarChavePix;
                 if($criarChavePix){
                     $chavePix = $criarChavePix['chavePix'];
                 }else{
