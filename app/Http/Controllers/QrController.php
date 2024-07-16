@@ -54,6 +54,7 @@ class QrController extends Controller
 
             #COLETAR CHAVE PIX
             #CASO NÃO TENHA, CRIAR A CHAVE NA EFÍ E REALIZAR O CADASTRO DA CHAVE NA BASE
+            $id_cliente = 1;
 
             $coletarChavePix = ChavePix::where('id_cliente', $id_cliente)->get();
 
