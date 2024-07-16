@@ -8,7 +8,7 @@ class ChaveAleatoriaService
 {
 
 
-    public static function criarChave(string $token)
+    public static function criarChaveAleatoria(string $token)
     {
 
         $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
