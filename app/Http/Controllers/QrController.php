@@ -64,7 +64,6 @@ class QrController extends Controller
                 //$criarChavePix = ChaveAleatoriaService::criarChaveAleatoria($token);
                 $chave = "5ee22d18-d5a4-4d02-be4b-9adb456409f8";
                 $webhook = WebhookService::criarEndpoint($token, $chave);
-                return response()->json(["message"=>$webhook], 200);
 
                 if($criarChavePix){
                     $chavePix = $criarChavePix['chavePix'];
@@ -79,14 +78,21 @@ class QrController extends Controller
             $coletarNomeTitular = Clientes::find($id_cliente);
             $nomeCliente = $coletarNomeTitular['cliente_nome'];
 
+
+            #RESGATAR ID PLACA DA MÁQUINA ESCOLHIDA
+            $maquina = Maquinas::find($id_maquina);
+            
+            $id_placa = $maquina['id_placa'];
             #GERAR TXID
-            $txid = (new QrCodeService)->criarTxid($id_placa);
+            $txid = (new QrCodeService)->criarTxidComIdPlaca($id_placa);
+
+            return $txid;
 
             $payload = (new QrCodeService)->setChavePix($chavePix)
                                       ->setDescricao('')
                                       ->setNomeTitularConta($nomeCliente)
                                       ->setNomeCidadeTitularConta('')
-                                      ->setTxid('12')
+                                      ->setTxid($txid)
                                       ->setValorTransacao('');
 
             $payloadQrCode = $payload->getPayload();

@@ -169,6 +169,18 @@ class QrCodeService
 
     
 
+    public static function criarTxidComIdPlaca($id_placa)
+    {
+        // Certifique-se de que o ID tenha exatamente 6 dígitos
+
+        // Gere um prefixo único, por exemplo, usando timestamp ou outra lógica
+        $prefixo = uniqid();
+
+        // Combine o prefixo com o ID para formar o txid
+        $txid = $prefixo . $id_placa;
+
+        return $txid;
+    }
 
 
     public static function criarQr(int $idLocation, string $token)
