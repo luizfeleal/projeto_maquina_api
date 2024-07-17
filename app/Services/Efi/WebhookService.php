@@ -53,7 +53,7 @@ class WebhookService
         return $resposta;
     }
 
-    public static function criarLocation(string $tipoCob, string $token)
+    public static function coletarWebhooks(string $token, string $chave)
     {
 
         $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
@@ -63,24 +63,18 @@ class WebhookService
 
         // Verifique se o arquivo realmente existe
         if (!file_exists($certificado)) {
-            throw new \Exception("O arquivo de certificado não foi encontrado: " . $caminhoCertificado);
+            throw new \Exception("O arquivo de certificado não foi encontrado: " . $certificado);
         }
 
-        $url = env('URL_EFI') . "/v2/loc";
+        $url = "/v2/webhook/" . $chave;
 
         // Inicializa a sessão cURL
         $ch = curl_init($url);
 
-        $data = array(
-            "tipoCob" => $tipoCob
-        );
-
-        $data_string = json_encode($data);
         curl_setopt_array(
             $ch,
             array(
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => $data_string,
+                CURLOPT_CUSTOMREQUEST => 'GET',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token],
                 CURLOPT_SSL_VERIFYPEER => true, // Verifica o certificado do servidor
@@ -90,15 +84,9 @@ class WebhookService
         );
 
         $result = curl_exec($ch);
-
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        
-        if (curl_errno($ch)) {
-            throw new \Exception("Erro durante a requisição cURL: " . curl_error($ch));
-          }
         curl_close($ch);
-
+    
         $resposta = json_decode($result);
 
         return $resposta;
