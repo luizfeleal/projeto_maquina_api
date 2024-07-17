@@ -50,7 +50,7 @@ class WebhookService
     
         $resposta = json_decode($result);
 
-        return $resposta;
+        return $result;
     }
 
     public static function coletarWebhooks(string $token, string $chave)
