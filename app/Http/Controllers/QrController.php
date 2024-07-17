@@ -14,7 +14,7 @@ use App\Services\Efi\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Mpdf\QrCode\Qrcode as MpdfQrCode;
+use Mpdf\QrCode\Qrcode as QrCodePdf;
 use Mpdf\QrCode\Output;
 
 
@@ -97,7 +97,7 @@ class QrController extends Controller
 
             $payloadQrCode = $payload->getPayload();
                                   
-            $obQrCode = new MpdfQrCode($payloadQrCode);
+            $obQrCode = new QrCodePdf($payloadQrCode);
 
             $image = (new Output\Png)->output($obQrCode, 400);
 
