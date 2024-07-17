@@ -11,7 +11,7 @@ class WebhookService
     public static function criarEndpoint(string $token, string $chave)
     {
         //ogsService::criar(array("id_usuario"=>session()->get('id_usuario'), "tabela"=>"tipo_endereco", "funcao"=>"coletar", "datahora"=>now()));
-        $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
+        $arquivo = "Certificados/Naise/homologacaoTesteNaise_cert.pem";
 
         // Obtém o caminho absoluto do arquivo de certificado
         $certificado = Storage::disk('local')->path($arquivo);
@@ -56,7 +56,7 @@ class WebhookService
     public static function coletarWebhooks(string $token, string $chave)
     {
 
-        $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
+        $arquivo = "Certificados/Naise/homologacaoTesteNaise_cert.pem";
 
         // Obtém o caminho absoluto do arquivo de certificado
         $certificado = Storage::disk('local')->path($arquivo);

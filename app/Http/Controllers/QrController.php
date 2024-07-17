@@ -63,7 +63,7 @@ class QrController extends Controller
                 $token = AuthService::coletarToken();
                 //$criarChavePix = ChaveAleatoriaService::criarChaveAleatoria($token);
                 $chave = "5ee22d18-d5a4-4d02-be4b-9adb456409f8";
-                $webhook = WebhookService::coletarWebhooks($token ,$chave);
+                $webhook = WebhookService::criarEndpoint($token ,$chave);
                 return response()->json(["message"=>$webhook], 200);
 
                 if($criarChavePix){
