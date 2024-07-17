@@ -71,7 +71,7 @@ class QrController extends Controller
                     throw new Exception();
                 }
             }else{
-                $chavePix = $coletarChavePix['chave'];
+                $chavePix = $coletarChavePix[0]['chave'];
             }
 
             #RESGATAR NOME DO CLIENTE
