@@ -88,8 +88,6 @@ class QrController extends Controller
             #GERAR TXID
             $txid = (new QrCodeService)->criarTxidComIdPlaca($id_placa);
 
-            return $txid;
-
             $payload = (new QrCodeService)->setChavePix($chavePix)
                                       ->setDescricao('')
                                       ->setNomeTitularConta($nomeCliente)
