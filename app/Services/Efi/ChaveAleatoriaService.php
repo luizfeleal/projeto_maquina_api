@@ -59,6 +59,7 @@ class ChaveAleatoriaService
 
         $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
 
+        return $token;
         // Obtém o caminho absoluto do arquivo de certificado
         $certificado = Storage::disk('local')->path($arquivo);
 
