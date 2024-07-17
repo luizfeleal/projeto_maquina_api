@@ -66,7 +66,7 @@ class WebhookService
             throw new \Exception("O arquivo de certificado não foi encontrado: " . $certificado);
         }
 
-        $url = "/v2/webhook/" . $chave;
+        $url = "/v2/webhook/";
 
         // Inicializa a sessão cURL
         $ch = curl_init($url);
