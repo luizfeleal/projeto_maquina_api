@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\QrCode;
+use App\Models\Clientes;
+use App\Models\Maquinas;
 use App\Services\Efi\QrCodeService;
 use App\Services\Efi\LocationsService;
 use App\Services\Efi\ChaveAleatoriaService;
