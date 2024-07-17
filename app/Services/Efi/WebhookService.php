@@ -37,7 +37,7 @@ class WebhookService
                 CURLOPT_CUSTOMREQUEST => 'PUT',
                 CURLOPT_POSTFIELDS => $data_string,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token, 'x-skip-mtls-checking: false'],
+                CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token, 'x-skip-mtls-checking: true'],
                 CURLOPT_SSL_VERIFYPEER => true, // Verifica o certificado do servidor
                 CURLOPT_SSL_VERIFYHOST => 2, // Verifica o host do certificado
                 CURLOPT_SSLCERT => $certificado // Define o certificado a ser usado
