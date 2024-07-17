@@ -8,7 +8,7 @@ class ChaveAleatoriaService
 {
 
 
-    public static function criarChaveAleatoria($id_cliente, $token)
+    public static function criarChaveAleatoria(string $id_cliente, string $token)
     {
 
         $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
@@ -54,7 +54,7 @@ class ChaveAleatoriaService
         return $resposta;
         
     }
-    public static function coletarChaveAleatoria($id_cliente, string $token)
+    public static function coletarChaveAleatoria(string $token)
     {
 
         $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
