@@ -11,6 +11,15 @@ class WebhookService
     public static function criarEndpoint(string $token, string $chave)
     {
         //ogsService::criar(array("id_usuario"=>session()->get('id_usuario'), "tabela"=>"tipo_endereco", "funcao"=>"coletar", "datahora"=>now()));
+        $arquivo = "Certificados/Naise/homologacaoTeste_cert.pem";
+
+        // Obtém o caminho absoluto do arquivo de certificado
+        $certificado = Storage::disk('local')->path($arquivo);
+
+        // Verifique se o arquivo realmente existe
+        if (!file_exists($certificado)) {
+            throw new \Exception("O arquivo de certificado não foi encontrado: " . $certificado);
+        }
 
         $url = "/v2/webhook/" . $chave;
 
