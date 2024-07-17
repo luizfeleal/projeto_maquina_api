@@ -8,7 +8,7 @@ class WebhookService
 {
 
 
-    public static function setarEndpoint(string $token, string $chave)
+    public static function criarEndpoint(string $token, string $chave)
     {
         //ogsService::criar(array("id_usuario"=>session()->get('id_usuario'), "tabela"=>"tipo_endereco", "funcao"=>"coletar", "datahora"=>now()));
 
