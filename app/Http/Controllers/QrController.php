@@ -107,10 +107,10 @@ class QrController extends Controller
             ->writerOptions([])
             ->data($payloadQrCode)
             ->encoding(new Encoding('UTF-8'))
-            ->errorCorrectionLevel(new ErrorCorrectionLevel(ErrorCorrectionLevel::HIGH))
+            ->errorCorrectionLevel(ErrorCorrectionLevel::HIGH()) // Use o método estático HIGH()
             ->size(300)
             ->margin(10)
-            ->roundBlockSizeMode(new RoundBlockSizeMode(RoundBlockSizeMode::MARGIN))
+            ->roundBlockSizeMode(RoundBlockSizeMode::MARGIN()) // Use o método estático MARGIN()
             ->build();
             // Obter a imagem do QR code em formato base64
             $image = $result->getString();
