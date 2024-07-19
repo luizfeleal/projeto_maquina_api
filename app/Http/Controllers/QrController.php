@@ -14,6 +14,7 @@ use App\Services\Efi\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Mpdf\Mpdf;
 use Mpdf\QrCode\Qrcode as QrCodePdf;
 use Mpdf\QrCode\Output;
 
