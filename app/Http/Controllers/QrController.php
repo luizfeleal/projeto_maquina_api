@@ -74,6 +74,7 @@ class QrController extends Controller
                 }
             }else{
                 $chavePix = $coletarChavePix[0]['chave'];
+                $id_chave_pix = $coletarChavePix[0]['id_chave_pix'];
             }
 
             #RESGATAR NOME DO CLIENTE
@@ -101,12 +102,11 @@ class QrController extends Controller
 
             $image = (new Output\Png)->output($obQrCode, 400);
 
-            $base64Imagem = base64_encode($Image);
+            $base64Imagem = base64_encode($image);
 
             //$token = AuthService::coletarToken();
             
             //Verifica se existe chave pix
-
             
 
             $dadosParaInserir = [
