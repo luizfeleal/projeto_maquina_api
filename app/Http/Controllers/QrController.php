@@ -15,10 +15,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
-use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\PngWriter;
 
 
 
@@ -104,14 +104,14 @@ class QrController extends Controller
             // Gerar o QR code
             $result = Builder::create()
             ->writer(new PngWriter())
+            ->writerOptions([])
             ->data($payloadQrCode)
             ->encoding(new Encoding('UTF-8'))
-            ->errorCorrectionLevel(new ErrorCorrectionLevelHigh())
+            ->errorCorrectionLevel(new ErrorCorrectionLevel(ErrorCorrectionLevel::HIGH))
             ->size(300)
             ->margin(10)
-            ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
+            ->roundBlockSizeMode(new RoundBlockSizeMode(RoundBlockSizeMode::MARGIN))
             ->build();
-
             // Obter a imagem do QR code em formato base64
             $image = $result->getString();
             $base64Imagem = base64_encode($image);
