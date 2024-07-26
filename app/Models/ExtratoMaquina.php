@@ -12,6 +12,8 @@ class ExtratoMaquina extends Model
     public $timestamps = false;
     protected $fillable = [
         'id_maquina',
+        'id_end_to_end',
+        'extrato_operacao',
         'extrato_operacao_tipo',
         'extrato_operacao_valor',
         'extrato_operacao_status',

@@ -14,11 +14,8 @@ use App\Services\Efi\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel;
-use Endroid\QrCode\RoundBlockSizeMode;
-use Endroid\QrCode\Writer\PngWriter;
+use Mpdf\QrCode\QrCode as MpdfQrCode;
+use Mpdf\QrCode\Output;
 
 
 
@@ -100,21 +97,18 @@ class QrController extends Controller
                                       ->setValorTransacao(0.00);
 
             $payloadQrCode = $payload->getPayload();
+            
                                   
             // Gerar o QR code
-            $result = Builder::create()
-            ->writer(new PngWriter())
-            ->writerOptions([])
-            ->data($payloadQrCode)
-            ->encoding(new Encoding('UTF-8'))
-            ->errorCorrectionLevel(ErrorCorrectionLevel::HIGH) // Use a constante diretamente
-            ->size(300)
-            ->margin(10)
-            ->roundBlockSizeMode(RoundBlockSizeMode::MARGIN) // Use a constante diretamente
-            ->build();
+           $obQrCode = new MpdfQrCode($payloadQrCode);
+           
+           $image = (new Output\Png)->output($obQrCode, 400);
+           
+           echo($image);
             // Obter a imagem do QR code em formato base64
-            $image = $result->getString();
             $base64Imagem = base64_encode($image);
+            
+            $base64Imagem = "data:image/png;base64, " . $base64Imagem;
 
             //$token = AuthService::coletarToken();
             

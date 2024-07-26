@@ -27,13 +27,103 @@ class WebhookController extends Controller
     {
 
         try {
-            Log::info($request);
-            return response()->json([''], 200);
+
+            DB::beginTransaction();
+
+            $webhook = array (
+                'pix' => 
+                array (
+                  0 => 
+                  array (
+                    'endToEndId' => 'E18236120202407232014s13d4641028',
+                    'txid' => '6699d72e658d712345678',
+                    'chave' => '5ee22d18-d5a4-4d02-be4b-9adb456409f8',
+                    'valor' => '0.01',
+                    'horario' => '2024-07-23T20:15:42.000Z',
+                    'gnExtras' => 
+                    array (
+                      'tarifa' => '0.01',
+                      'pagador' => 
+                      array (
+                        'nome' => 'LUIZ FELIPE LEAL DE ARAUJO',
+                        'cpf' => '***.986.847-**',
+                        'codigoBanco' => '18236120',
+                      ),
+                    ),
+                  ),
+                ),
+                'ignorar' => '/pix',
+            );
+
+            $idE2E = $webhook['pix'][0]['endToEndId'];
+
+            $txid = $webhook['pix'][0]['txid'];
+            $valor = intval($webhook['pix'][0]['valor']);
+            $tarifa = $webhook['pix'][0]['gnExtras']['tarifa'];
+
+            $id_placa = intval(substr($txid, -8));
+
+            //Tentar liberar jogada
+
+            //Se der certo, registrar o sucesso
+
+            //Se der erro, processar o estorno
+
+            $tentativas = 0;
+            $maxTentativas = env('TENTATIVAS_PERSISTENCIA_JOGADA');
+            $resposta = null;
+
+                do {
+                    $resposta = JogadasService::liberarJogada($id_placa, $valor);
+                    $tentativas++;
+                    
+                    // Verifica se o http_code é 200
+                    if ($resposta['http_code'] == 200) {
+                        break;
+                    }
+                    
+                    // Se atingir o número máximo de tentativas, exibe uma mensagem de erro ou realiza outra ação
+                    if ($tentativas >= $maxTentativas) {
+                        // Lidar com falha após tentativas
+    
+                        //Fazer o estorno aqui
+                        break;
+                    }
+    
+                } while ($resposta['http_code'] != 200);
+                //Salvar a transacao
+
+                $dadosExtrato = [
+                    [
+                    "id_maquina" => $id_maquina,
+                    "id_end_to_end" => $idE2E,
+                    "extrato_operacao" => "C",
+                    "extrato_operacao_tipo" => "PIX",
+                    "extrato_operacao_valor" => $valor,
+                    "extrato_operacao_status" => 1,
+                    ],
+                    [
+                        "id_maquina" => $id_maquina,
+                        "extrato_operacao" => "D",
+                        "extrato_operacao_tipo" => "Taxa",
+                        "extrato_operacao_valor" => $tarifa,
+                        "extrato_operacao_status" => 1,
+                    ]
+                ];
+                
+                $extrato = ExtratoMaquina::insert($dadosExtrato);
+                //retornar codigo 200
+
+                DB::commit();
+                return response()->json([''], 200);
 
         } catch (ValidationException $e) {
+            DB::rollBack();
             return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 422);
         } catch (Exception $e) {
-            return response()->json(['message' => 'Houve um erro ao tentar cadastrar a tela de acesso.'], 500);
+            DB::rollBack();
+            //REGISTRAR LOGS
+            return response()->json(['message' => 'Houve um erro ao tentar registrar o extrato.'], 500);
         }
     }
 
