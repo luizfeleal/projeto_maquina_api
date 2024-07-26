@@ -80,6 +80,7 @@ class QrController extends Controller
             #RESGATAR NOME DO CLIENTE
             $coletarNomeTitular = Clientes::find($id_cliente);
             $nomeCliente = $coletarNomeTitular['cliente_nome'];
+            
 
 
             #RESGATAR ID PLACA DA MÁQUINA ESCOLHIDA
@@ -104,7 +105,7 @@ class QrController extends Controller
            
            $image = (new Output\Png)->output($obQrCode, 400);
            
-           echo($image);
+           
             // Obter a imagem do QR code em formato base64
             $base64Imagem = base64_encode($image);
             
