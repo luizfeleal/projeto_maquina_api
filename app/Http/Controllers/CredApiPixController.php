@@ -45,9 +45,8 @@ class CredApiPixController extends Controller
             if($converter_arquivo_p12_para_pem['status'] == 200){
                 $caminho = $converter_arquivo_p12_para_pem['caminho_certificado'];
             }else{
-                return response()->json(['message' => 'Houve um erro ao tentar cadastrar o certificado!', 'response' => $caminho], 500);
+                return response()->json(['message' => 'Houve um erro ao tentar cadastrar o certificado!', 'response' => $converter_arquivo_p12_para_pem], 500);
             }
-
 
 
             return DB::transaction(function () use ($dados) {
