@@ -6,6 +6,7 @@ use App\Models\QrCode;
 use App\Models\Clientes;
 use App\Models\Maquinas;
 use App\Services\Efi\QrCodeService;
+use App\Services\Efi\ConfigService;
 use App\Services\Efi\LocationsService;
 use App\Services\Efi\ChaveAleatoriaService;
 use App\Services\Efi\WebhookService;
@@ -66,6 +67,10 @@ class QrController extends Controller
                 //$criarChavePix = ChaveAleatoriaService::criarChaveAleatoria($token);
                 $chave = "5ee22d18-d5a4-4d02-be4b-9adb456409f8";
                 $webhook = WebhookService::criarEndpoint($token, $chave);
+
+                $estruturaConfig =  (new QrCodeService)->setarEstruturaWebhook($chave);
+                $setarConfig = ConfigService::setarConfiguracaoWebhook($estruturaConfig);
+
 
                 if($criarChavePix){
                     $chavePix = $criarChavePix['chavePix'];

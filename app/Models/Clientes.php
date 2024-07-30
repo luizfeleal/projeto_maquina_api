@@ -15,15 +15,30 @@ class Clientes extends Model
         "cliente_nome",
         "cliente_celular",
         "cliente_email",
-        "cliente_cpf_cnpj"
+        "cliente_data_nascimento",
+        "cliente_cpf_cnpj",
+        "cliente_logradouro",
+        "cliente_bairro",
+        "cliente_cidade",
+        "cliente_uf",
+        "cliente_cep",
+        "cliente_numero",
+        "cliente_complemento"
     ];
      public static function rules($id = null)
      {
         return [
             "cliente_nome" => "required|string|max:255",
             "cliente_celular"=> "required|string|max:15",
+            "cliente_data_nascimento"=> "required|string|max:25",
             "cliente_email"=> "required|string|max:255",
-            "cliente_cpf_cnpj"=>"required|max:20|unique:clientes"
+            "cliente_cpf_cnpj"=>"required|max:20|unique:clientes",
+            "cliente_logradouro" => "required|string|max:100",
+            "cliente_bairro" => "required|string|max:100",
+            "cliente_cidade" => "required|string|max:100",
+            "cliente_uf" => "required|string|max:2",
+            "cliente_cep" => "required|string|max:10",
+            "cliente_numero" => "required|string|max:10"
         ];
      }
 

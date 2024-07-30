@@ -4,11 +4,11 @@ namespace App\Services\Efi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
-class LocationsService
+class ConversorArquivoService
 {
 
 
-    public static function converterCertificadoEfi($file = Null, string $token)
+    public static function converterCertificadoEfi($file = Null, string $directory)
     {
         if(!$file){
             return false;
@@ -40,13 +40,14 @@ class LocationsService
             }
 
             // Salvar os arquivos .pem em um local desejado (por exemplo, no storage/app)
+            $pathCertificado = "{$directory}/certificate.pem";
             Storage::put('private_key.pem', $privateKeyPem);
-            Storage::put('certificate.pem', $certPem);
+            Storage::put($pathCertificado, $certPem);
             Storage::put('ca_certificates.pem', $caCertsPem);
 
-            return ['success' => 'Conversão concluída com sucesso', 'status' => 200];
+            return ['success' => 'Conversão concluída com sucesso', 'caminho_certificado' => $pathCertificado, 'status' => 200];
         }else {
-            return ['error' => 'Falha ao ler o arquivo .p12', 'status' => 500];
+            return ['error' => 'Falha ao ler o arquivo .p12', 'caminho_certificado' => null, 'status' => 500];
         }
         
     }

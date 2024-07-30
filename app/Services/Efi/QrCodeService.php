@@ -279,14 +279,10 @@ class QrCodeService
         
     }
 
-    public static function geradorDeQrCode()
-    {
 
-    }
-
-    public static function geradorDePayload()
-    {
-        
+    public static function setarEstruturaWebhook($chaveAleatoria){
+        $estrutura = array('pix' => array('receberSemChave' => true, 'chaves' => array($chaveAleatoria => array('recebimento' => array('txidObrigatorio' => false, 'qrCodeEstatico' => array('recusarTodos' => false), 'webhook' => array('notificacao' => array('tarifa' => true, 'pagador' => true), 'notificar' => array('pixSemTxid' => true)))))));
+        return $estrutura;
     }
 
 }

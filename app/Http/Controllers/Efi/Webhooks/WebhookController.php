@@ -127,20 +127,6 @@ class WebhookController extends Controller
         }
     }
 
-    public function processamentoRequisicaoPrincipal(Request $request)
-    {
-
-        return response()->json(['message' => 'deu certo: '], 200);
-        try {
-            
-
-        } catch (ValidationException $e) {
-            return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 422);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'Houve um erro ao tentar cadastrar a tela de acesso.'], 500);
-        }
-    }
-
     public function setarUrlWebhook(Request $request)
     {
         $token = AuthService::coletarToken();

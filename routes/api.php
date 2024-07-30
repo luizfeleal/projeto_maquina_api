@@ -47,6 +47,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
     Route::apiResource('locais','App\Http\Controllers\LocaisController');
     Route::apiResource('QRCode','App\Http\Controllers\QrController');
+    Route::apiResource('credApiPix','App\Http\Controllers\CredApiPixController');
     Route::post('hardware/status', 'App\Http\Controllers\Hardware\StatusController@atualizarStatus');
     Route::post('hardware/liberarJogada', 'App\Http\Controllers\Hardware\JogadasController@liberarJogada');
 
