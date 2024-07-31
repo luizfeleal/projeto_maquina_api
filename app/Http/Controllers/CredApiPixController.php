@@ -14,7 +14,7 @@ class CredApiPixController extends Controller
 {
     public function index()
     {
-        try {
+        //try {
             $cred = CredApiPix::all();
 
             // Descriptografar os dados ao retorná-los
@@ -25,9 +25,9 @@ class CredApiPixController extends Controller
             }
 
             return response()->json($cred, 200);
-        } catch (Exception $e) {
-            return response()->json('Houve um erro ao tentar coletar as credenciais.', 500);
-        }
+        //} catch (Exception $e) {
+          //  return response()->json('Houve um erro ao tentar coletar as credenciais.', 500);
+        //}
     }
 
     public function store(Request $request)
