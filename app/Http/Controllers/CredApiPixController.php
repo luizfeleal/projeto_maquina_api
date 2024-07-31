@@ -14,7 +14,7 @@ class CredApiPixController extends Controller
 {
     public function index()
     {
-        //try {
+        try {
             $cred = CredApiPix::all();
 
             // Descriptografar os dados ao retorná-los
@@ -25,14 +25,14 @@ class CredApiPixController extends Controller
             }
 
             return response()->json($cred, 200);
-        //} catch (Exception $e) {
-          //  return response()->json('Houve um erro ao tentar coletar as credenciais.', 500);
-        //}
+        } catch (Exception $e) {
+            return response()->json('Houve um erro ao tentar coletar as credenciais.', 500);
+        }
     }
 
     public function store(Request $request)
     {
-        try {
+        //try {
             $dados = $request->all();
 
             $validator = Validator::make($dados, CredApiPix::rules(), CredApiPix::feedback());
@@ -61,11 +61,11 @@ class CredApiPixController extends Controller
                 $cred->save();
                 return response()->json(['message' => 'Credencial cadastrada com sucesso!', 'response' => $cred], 201);
             });
-        } catch (ValidationException $e) {
+        /*} catch (ValidationException $e) {
             return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 400);
         } catch (Exception $e) {
             return response()->json(['message' => 'Houve um erro ao tentar cadastrar a credencial.'], 500);
-        }
+        }*/
     }
 
     public function show($id)
