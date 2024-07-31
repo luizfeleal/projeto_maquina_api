@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CredApiPix;
+use App\Services\ConversorArquivoService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Crypt;
