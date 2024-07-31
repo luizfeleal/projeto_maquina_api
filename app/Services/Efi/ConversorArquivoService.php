@@ -8,7 +8,7 @@ class ConversorArquivoService
 {
 
 
-    public static function converterCertificadoEfi($file = Null, string $directory)
+    public static function converterCertificadoEfi($file, string $directory)
     {
         if(!$file){
             return false;
