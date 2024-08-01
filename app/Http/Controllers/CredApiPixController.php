@@ -50,7 +50,7 @@ class CredApiPixController extends Controller
             }
 
 
-            return DB::transaction(function () use ($dados) {
+            return DB::transaction(function () use ($dados, $caminho) {
                 $cred = new CredApiPix();
                 $cred->fill([
                     "id_cliente" => $dados['id_cliente'],
