@@ -35,11 +35,11 @@ class CredApiPixController extends Controller
         //try {
             $dados = $request->all();
 
-            $validator = Validator::make($dados, CredApiPix::rules(), CredApiPix::feedback());
+            /*$validator = Validator::make($dados, CredApiPix::rules(), CredApiPix::feedback());
 
             if ($validator->fails()) {
                 return response()->json(['errors' => $validator->errors()], 400);
-            }
+            }*/
 
             $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], 'Certificados');
 
