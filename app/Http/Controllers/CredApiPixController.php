@@ -32,7 +32,7 @@ class CredApiPixController extends Controller
 
     public function store(Request $request)
     {
-        //try {
+        try {
             $dados = $request->all();
 
             /*$validator = Validator::make($dados, CredApiPix::rules(), CredApiPix::feedback());
@@ -43,6 +43,7 @@ class CredApiPixController extends Controller
 
             $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], 'Certificados');
 
+            return $converter_arquivo_p12_para_pem;
             if($converter_arquivo_p12_para_pem['status'] == 200){
                 $caminho = $converter_arquivo_p12_para_pem['caminho_certificado'];
             }else{
@@ -61,11 +62,11 @@ class CredApiPixController extends Controller
                 $cred->save();
                 return response()->json(['message' => 'Credencial cadastrada com sucesso!', 'response' => $cred], 201);
             });
-        /*} catch (ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 400);
         } catch (Exception $e) {
             return response()->json(['message' => 'Houve um erro ao tentar cadastrar a credencial.'], 500);
-        }*/
+        }
     }
 
     public function show($id)
