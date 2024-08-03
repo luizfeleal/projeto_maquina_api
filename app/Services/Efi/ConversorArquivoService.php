@@ -8,7 +8,7 @@ class ConversorArquivoService
 {
 
 
-    public static function converterCertificadoEfi($file, string $directory)
+    public static function converterCertificadoEfi($file, string $directory, $id_cliente)
     {
 
         if(!$file){
@@ -41,7 +41,7 @@ class ConversorArquivoService
             }
 
             // Salvar os arquivos .pem em um local desejado (por exemplo, no storage/app)
-            $pathCertificado = "{$directory}/certificate.pem";
+            $pathCertificado = "{$directory}/certificate{$id_cliente}.pem";
             Storage::put('private_key.pem', $privateKeyPem);
             Storage::put($pathCertificado, $certPem);
             Storage::put('ca_certificates.pem', $caCertsPem);
