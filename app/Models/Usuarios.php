@@ -19,7 +19,8 @@ class Usuarios extends Model
         'usuario_email',
         'usuario_ultimo_acesso',
         'usuario_login',
-        'usuario_senha'
+        'usuario_senha',
+        'ativo'
     ];
 
     public static function rules($id = null)
@@ -32,6 +33,7 @@ class Usuarios extends Model
             'usuario_email' => 'required|email|unique:usuarios',
             'usuario_login' => 'required|string|max:255|unique:usuarios',
             'usuario_senha' => 'required|string|min:6',
+            'ativo' => 'required|min:1|max:1',
         ];
     }
 
