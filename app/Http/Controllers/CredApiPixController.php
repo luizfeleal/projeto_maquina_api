@@ -40,10 +40,10 @@ class CredApiPixController extends Controller
             if ($validator->fails()) {
                 return response()->json(['errors' => $validator->errors()], 400);
             }*/
+            $id_cliente = $request['id_cliente'];
 
-            $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], 'Certificados');
+            $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], "Certificados/{$id_cliente}");
 
-            return $converter_arquivo_p12_para_pem;
             if($converter_arquivo_p12_para_pem['status'] == 200){
                 $caminho = $converter_arquivo_p12_para_pem['caminho_certificado'];
             }else{
