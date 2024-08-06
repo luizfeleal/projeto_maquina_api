@@ -118,15 +118,16 @@ class ClientesController extends Controller
     {
         DB::beginTransaction();
         try{
-            $clientes = Clientes::find($id);
-            $clientes->delete();
-
             // Obter todos os registros com o id_maquina especificado
             $clienteLocal = ClienteLocal::where('id_cliente', $id)->get();
 
+            return $clienteLocal;
             if(!empty($clienteLocal)){
-                return response()->json(["message" => "O cliente não pôde ser excluído pois está vinculado a um ou mais locais.", "response" => false]);
+                return response()->json(["message" => "O cliente não pôde ser excluído pois há local/locais associado(s) à ele.", "response" => false]);
             }
+            $clientes = Clientes::find($id);
+            $clientes->delete();
+
             DB::commit();
 
             return response()->json(["message" => "Cliente excluído com sucesso!", "response" => true]);
