@@ -121,7 +121,6 @@ class ClientesController extends Controller
             // Obter todos os registros com o id_maquina especificado
             $clienteLocal = ClienteLocal::where('id_cliente', $id)->get();
 
-            return $clienteLocal;
             if(!empty($clienteLocal)){
                 return response()->json(["message" => "O cliente não pôde ser excluído pois há local/locais associado(s) à ele.", "response" => false]);
             }
