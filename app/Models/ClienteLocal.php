@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class ClienteLocal extends Model
 {
     use HasFactory;
-    protected $table = "id_cliente_local";
+    protected $table = "cliente_local";
+    protected $primaryKey = 'id_cliente_local';
     public $timestamps = false;
     protected $fillable = [
         "id_cliente",
