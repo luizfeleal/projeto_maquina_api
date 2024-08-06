@@ -3,13 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 class Maquinas extends Model
 {
+
+    use HasFactory, SoftDeletes;
     protected $table = 'maquinas';
     protected $primaryKey = 'id_maquina';
     public $timestamps = false;
+    protected $dates = ['deleted_at'];
     protected $fillable = [
         'id_local',
         'id_placa',

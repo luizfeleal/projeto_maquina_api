@@ -6,6 +6,7 @@ use App\Models\Maquinas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Exception;
 
 
 
@@ -103,7 +104,7 @@ class MaquinasController extends Controller
                 return response()->json(['message' => 'Cliente atualizado com sucesso!', 'response' => $maquina], 200);
             });
         }catch(\Exception $e) {
-            return response()->json(["response" => "Houve um erro ao tentar atualizar o cliente de id: $id.", "error" => $e->getMessage()], 500);
+            return response()->json(["message" => "Houve um erro ao tentar atualizar o cliente de id: $id.", "error" => $e->getMessage()], 500);
         }
     }
 
@@ -115,6 +116,24 @@ class MaquinasController extends Controller
      */
     public function destroy($id)
     {
-        //
+        DB::beginTransaction();
+        try{
+            $maquina = Maquinas::find($id);
+            $maquina->delete();
+
+            // Obter todos os registros com o id_maquina especificado
+            $qrCodes = QrCode::where('id_maquina', $id)->get();
+
+            // Deletar cada registro
+            foreach ($qrCodes as $qrCode) {
+                $qrCode->delete();
+            }
+            DB::commit();
+
+            return response()->json(["message" => "Máquina removida com sucesso!", "response" => true]);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(["message" => "Houve um erro ao tentar remover a máquina.", "response" => false]);
+        }
     }
 }

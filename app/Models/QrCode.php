@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QrCode extends Model
 {
+    use HasFactory, SoftDeletes;
     protected $table = 'qr_code';
     protected $primaryKey = 'id_qr';
     public $timestamps = false;
+    protected $dates = ['deleted_at'];
     protected $fillable = [
         'id_chave_pix',
         'id_maquina',
