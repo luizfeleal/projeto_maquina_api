@@ -4,14 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Locais extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'locais';
     protected $primaryKey = 'id_local';
     public $timestamps = false;
+    protected $dates = ['deleted_at'];
     protected $fillable = [
         'local_nome',
         'id_cliente'

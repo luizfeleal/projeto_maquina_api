@@ -105,7 +105,24 @@ class LocaisController extends Controller
      */
     public function destroy($id)
     {
-        //
+        DB::beginTransaction();
+        try{
+            $maquinas = Maquinas::where('id_local', $id)->get();
+            if(!empty($maquinas)){
+                return response()->json(["message" => "O local não pôde ser removido pois há máquina(s) associada(s) à ele.", "response" => false]);
+            }
+
+            $local = Locais::find($id);
+            $local->delete();
+
+
+            DB::commit();
+
+            return response()->json(["message" => "Local removido com sucesso!", "response" => true]);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(["message" => "Houve um erro ao tentar remover o local.", "response" => false]);
+        }
     }
 }
  
