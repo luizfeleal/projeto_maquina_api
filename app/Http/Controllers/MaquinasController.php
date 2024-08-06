@@ -116,6 +116,7 @@ class MaquinasController extends Controller
      */
     public function destroy($id)
     {
+        return true;
         DB::beginTransaction();
         try{
             $maquina = Maquinas::find($id);
