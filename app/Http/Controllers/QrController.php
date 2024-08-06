@@ -204,6 +204,17 @@ class QrController extends Controller
      */
     public function destroy($id)
     {
-        //
+        DB::beginTransaction();
+        try{
+            $qr = QrCode::find($id);
+            $qr->delete();
+
+            DB::commit();
+
+            return response()->json(["message" => "QR Code removido com sucesso!", "response" => true]);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(["message" => "Houve um erro ao tentar remover o QR Code.", "response" => false]);
+        }
     }
 }
