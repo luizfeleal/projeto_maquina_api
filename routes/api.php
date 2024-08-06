@@ -41,6 +41,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('usuarios','App\Http\Controllers\UsuariosController');
     Route::apiResource('clientes','App\Http\Controllers\ClientesController');
     Route::apiResource('maquinas','App\Http\Controllers\MaquinasController');
+    Route::apiResource('clienteLocal','App\Http\Controllers\ClienteLocalController');
     Route::apiResource('gruposAcesso','App\Http\Controllers\GruposAcessoController');
     Route::apiResource('acessosTela','App\Http\Controllers\AcessosTelaController');
     Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
