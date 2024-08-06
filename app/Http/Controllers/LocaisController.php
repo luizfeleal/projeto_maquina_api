@@ -108,8 +108,7 @@ class LocaisController extends Controller
     {
         DB::beginTransaction();
         try{
-            $maquinas = Maquinas::where('id_local', $id)->get();
-            return empty($maquinas);
+            $maquinas = Maquinas::where('id_local', $id)->get()->toArray();
             if(!empty($maquinas)){
                 return response()->json(["message" => "O local não pôde ser removido pois há máquina(s) associada(s) à ele.", "response" => false]);
             }
