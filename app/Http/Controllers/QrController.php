@@ -96,10 +96,10 @@ class QrController extends Controller
             $txid = (new QrCodeService)->criarTxidComIdPlaca($id_placa);
 
             $payload = (new QrCodeService)->setChavePix($chavePix)
-                                      ->setDescricao('')
+                                      ->setDescricao('teste')
                                       ->setNomeTitularConta($nomeCliente)
-                                      ->setNomeCidadeTitularConta('')
-                                      ->setTxid($txid)
+                                      ->setNomeCidadeTitularConta('BELFORDROXO')
+                                      ->setTxid("123456")
                                       ->setValorTransacao(0.00);
 
             $payloadQrCode = $payload->getPayload();

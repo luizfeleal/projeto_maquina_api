@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Maquinas;
 use App\Services\Hardware\JogadasService;
+use App\Services\Efi\GestaoPixService;
 use Carbon\Carbon;
 use Throwable;
 use Exception;
@@ -49,6 +50,7 @@ class JogadasController extends Controller
             
         }catch(Exception $e){
             //aqui será executada a lógica do  pix em caso de erro
+            GestaoPixService::solicitarDevolucao();
             return response()->json(["message" => "Houve um erro ao tentar se comunicar com o hardware e liberar a jogada."], 500);
 
         }catch(Throwable $e){

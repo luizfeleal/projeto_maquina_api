@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Efi\Webhooks;
 
 use App\Models\AcessosTela;
+use App\Models\ExtratoMaquina;
+use App\Services\Efi\GestaoPixService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -72,6 +74,7 @@ class WebhookController extends Controller
             $tentativas = 0;
             $maxTentativas = env('TENTATIVAS_PERSISTENCIA_JOGADA');
             $resposta = null;
+            $gerarDevolucao = false;
 
                 do {
                     $resposta = JogadasService::liberarJogada($id_placa, $valor);
@@ -84,8 +87,8 @@ class WebhookController extends Controller
                     
                     // Se atingir o número máximo de tentativas, exibe uma mensagem de erro ou realiza outra ação
                     if ($tentativas >= $maxTentativas) {
-                        // Lidar com falha após tentativas
-    
+                        $gerarDevolucao = true;
+                        
                         //Fazer o estorno aqui
                         break;
                     }
@@ -112,6 +115,29 @@ class WebhookController extends Controller
                 ];
                 
                 $extrato = ExtratoMaquina::insert($dadosExtrato);
+
+                if($gerarDevolucao == true){
+                    $token = AuthService::coletarToken();
+                    $id_transacao = ExtratoMaquina::where('id_maquina', $id_maquina)->where('id_end_to_end', $idE2E);
+                    $devolucao = GestaoPixService::solicitarDevolucao($token, $idE2E, $id_transacao, $valor);
+
+                    if($devolucao['http_code'] == 200){
+                        $dadosExtrato = [
+                                [
+                                    "id_maquina" => $id_maquina,
+                                    "extrato_operacao" => "D",
+                                    "extrato_operacao_tipo" => "Estorno",
+                                    "extrato_operacao_valor" => $valor,
+                                    "extrato_operacao_status" => 1,
+                                ]
+                            ];
+                            $extrato = ExtratoMaquina::insert($dadosExtrato);
+                        
+                    }else{
+                        \Log::info('Houve um erro ao tentar fazer a devolução');
+                    }
+
+                }
                 //retornar codigo 200
 
                 DB::commit();
