@@ -58,7 +58,7 @@ class QrController extends Controller
 
             #COLETAR CHAVE PIX
             #CASO NÃO TENHA, CRIAR A CHAVE NA EFÍ E REALIZAR O CADASTRO DA CHAVE NA BASE
-            $id_cliente = 1;
+            $id_cliente = 5;
 
             $coletarChavePix = ChavePix::where('id_cliente', $id_cliente)->get();
 
@@ -83,8 +83,8 @@ class QrController extends Controller
             }
 
             #RESGATAR NOME DO CLIENTE
-            $coletarNomeTitular = Clientes::find($id_cliente);
-            $nomeCliente = $coletarNomeTitular['cliente_nome'];
+            $cliente = Clientes::find($id_cliente);
+            $nomeCliente = $cliente['cliente_nome'];
             
 
 
@@ -100,9 +100,9 @@ class QrController extends Controller
             // Retorna a primeira parte do nome
             
             $payload = (new QrCodeService)->setChavePix($chavePix)
-                                      ->setDescricao('')
+                                      ->setDescricao('Pagamento')
                                       ->setNomeTitularConta($partesNome[0])
-                                      ->setNomeCidadeTitularConta('')
+                                      ->setNomeCidadeTitularConta($cliente['cliente_cidade'])
                                       ->setTxid($txid)
                                       ->setValorTransacao(0.00);
 
