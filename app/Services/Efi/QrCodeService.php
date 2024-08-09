@@ -98,7 +98,7 @@ class QrCodeService
      */
 
     public function setValorTransacao($valorTransacao){
-        $this->setValorTransacao = (string)number_format($valorTransacao, 2,'.', '');
+        $this->valorTransacao = (string)number_format($valorTransacao, 2, '.', '');
         return $this;
     }
 
