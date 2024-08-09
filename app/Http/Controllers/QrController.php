@@ -95,16 +95,18 @@ class QrController extends Controller
             #GERAR TXID
             $txid = (new QrCodeService)->criarTxidComIdPlaca($id_placa);
 
+            $partesNome = explode(' ', trim($nomeCliente));
+    
+            // Retorna a primeira parte do nome
+            
             $payload = (new QrCodeService)->setChavePix($chavePix)
-                                      ->setDescricao('teste')
-                                      ->setNomeTitularConta("LuizFelipe")
-                                      ->setNomeCidadeTitularConta('BELFORDROXO')
-                                      ->setTxid("123456")
+                                      ->setDescricao('')
+                                      ->setNomeTitularConta($partesNome[0])
+                                      ->setNomeCidadeTitularConta('')
+                                      ->setTxid($txid)
                                       ->setValorTransacao(0.00);
 
             $payloadQrCode = $payload->getPayload();
-
-            \Log::info($payloadQrCode);
             
                                   
             // Gerar o QR code
