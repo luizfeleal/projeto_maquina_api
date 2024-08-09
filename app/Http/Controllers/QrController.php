@@ -103,6 +103,8 @@ class QrController extends Controller
                                       ->setValorTransacao(0.00);
 
             $payloadQrCode = $payload->getPayload();
+
+            \Log::info($payloadQrCode);
             
                                   
             // Gerar o QR code
