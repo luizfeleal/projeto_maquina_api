@@ -136,12 +136,7 @@ class QrCodeService
         }
   
         //RETORNA CÓDIGO CRC16 DE 4 CARACTERES
-        //return self::ID_CRC16.'04'.strtoupper(dechex($resultado));
-        $hex = strtoupper(dechex($resultado));
-      $hex = str_pad( $hex, 4, '0', STR_PAD_LEFT ); // se o hex for numerico iniciando em 0, precisamos garantir que ele fique com 4 caracteres
-
-      //RETORNA CODIGO CRC16 DE 4 CARACTERES
-      return self::ID_CRC16.'04'.$hex;
+        return self::ID_CRC16.'04'.strtoupper(dechex($resultado));
     }
 
     public function getInformacaoTitularConta()
