@@ -37,7 +37,7 @@ class CheckActiveMachines extends Command
 	\Log::info('Placas ativas:', ['placas' => $placasAtivas]);
         foreach ($placasAtivas as $machineData) {
             // Encontre a máquina pelo id_placa
-            $machine = Machine::where('id_placa', $machineData['id'])->first();
+            $machine = Maquinas::where('id_placa', $machineData['id'])->first();
 
             if ($machine) {
                 // Converte lastPing para o formato Y-m-d H:i:s

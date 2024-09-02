@@ -53,7 +53,6 @@ class MaquinasController extends Controller
 $token = AuthService::coletarToken();
 //return array($request['id_placa']);
 $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['id_placa']));
-return $maquinaRegistrada;
 	    if ($maquinaRegistrada["http_code"] != 200) {
                 return response()->json(['errors'=> "Houve um erro ao tentar cadastrar a máquina."], 400);
             }
