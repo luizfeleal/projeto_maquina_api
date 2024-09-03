@@ -56,6 +56,7 @@ $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['
 	    if ($maquinaRegistrada["http_code"] != 200) {
                 return response()->json(['errors'=> "Houve um erro ao tentar cadastrar a máquina."], 400);
             }
+
             return DB::transaction(function () use ($dados) {
                 $maquinas = new Maquinas();
                 $maquinas->fill($dados);
