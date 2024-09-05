@@ -41,7 +41,7 @@ class CheckActiveMachines extends Command
 
             if ($machine) {
                 // Converte lastPing para o formato Y-m-d H:i:s
-                $lastPingFormatted = Carbon::createFromTimestampMs($machineData['lastPing'])->format('Y-m-d H:i:s');
+                $lastPingFormatted = Carbon::createFromTimestampMs($machineData->lastPing)->format('Y-m-d H:i:s');
 
                 // Atualize o status para 1 e o last_ping
                 $machine->update([
