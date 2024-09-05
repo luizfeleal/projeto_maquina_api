@@ -35,16 +35,15 @@ class CheckActiveMachines extends Command
         $placasAtivas = MaquinasService::coletarMaquinasAtivas($token);
         $maquinas = Maquinas::query()->update(['maquina_status' => 0]);
 	//\Log::info('Placas ativas:', ['placas' => $placasAtivas]);
-    \Log::info($placasAtivas);
+    \Log::info($placasAtivas[0]);
         foreach ($placasAtivas as $machineData) {
             // Encontre a máquina pelo id_placa
             // Acessa o objeto correto
-            $stdClassData = $machineData->stdClass;
-            $machine = Maquinas::where('id_placa', $stdClassData->id)->first();
+            $machine = Maquinas::where('id_placa', $machineData->id)->first();
 
             if ($machine) {
                 // Converte lastPing para o formato Y-m-d H:i:s
-                $lastPingFormatted = Carbon::createFromTimestampMs($stdClassData->lastPing)->format('Y-m-d H:i:s');
+                $lastPingFormatted = Carbon::createFromTimestampMs($machineData->lastPing)->format('Y-m-d H:i:s');
 
                 // Atualize o status para 1 e o last_ping
                 $machine->update([
