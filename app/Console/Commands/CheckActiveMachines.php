@@ -36,12 +36,13 @@ class CheckActiveMachines extends Command
         $maquinas = Maquinas::query()->update(['maquina_status' => 0]);
 	//\Log::info('Placas ativas:', ['placas' => $placasAtivas]);
     foreach ($placasAtivas as $machineData) {
-            //\Log::info($machineData);
-            // Encontre a máquina pelo id_placa
+        // Encontre a máquina pelo id_placa
             // Acessa o objeto correto
             $id = $machineData->id;
             $lastPing = $machineData->lastPing;
             $machine = Maquinas::where('id_placa', $id)->first();
+            \Log::info($id);
+
 
             if ($machine) {
                 // Converte lastPing para o formato Y-m-d H:i:s
