@@ -37,11 +37,13 @@ class CheckActiveMachines extends Command
 	\Log::info('Placas ativas:', ['placas' => $placasAtivas]);
         foreach ($placasAtivas as $machineData) {
             // Encontre a máquina pelo id_placa
-            $machine = Maquinas::where('id_placa', $machineData->id)->first();
+            // Acessa o objeto correto
+            $stdClassData = $machineData->stdClass;
+            $machine = Maquinas::where('id_placa', $stdClassData->id)->first();
 
             if ($machine) {
                 // Converte lastPing para o formato Y-m-d H:i:s
-                $lastPingFormatted = Carbon::createFromTimestampMs($machineData->lastPing)->format('Y-m-d H:i:s');
+                $lastPingFormatted = Carbon::createFromTimestampMs($stdClassData->lastPing)->format('Y-m-d H:i:s');
 
                 // Atualize o status para 1 e o last_ping
                 $machine->update([
