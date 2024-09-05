@@ -35,8 +35,8 @@ class CheckActiveMachines extends Command
         $placasAtivas = MaquinasService::coletarMaquinasAtivas($token);
         $maquinas = Maquinas::query()->update(['maquina_status' => 0]);
 	//\Log::info('Placas ativas:', ['placas' => $placasAtivas]);
-    \Log::info($placasAtivas[0]);
-        foreach ($placasAtivas as $machineData) {
+    foreach ($placasAtivas as $machineData) {
+            \Log::info($machineData);
             // Encontre a máquina pelo id_placa
             // Acessa o objeto correto
             $machine = Maquinas::where('id_placa', $machineData->id)->first();
