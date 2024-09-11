@@ -50,7 +50,7 @@ class WebhookController extends Controller
 
             $id_placa_ultimos_quatro_digitos = intval(substr($txid, -4));
 
-            $id_placa = DB::table('maquinas')
+            $id_placa_result = DB::table('maquinas')
             ->whereRaw('RIGHT(id_placa, 4) = ?', [$id_placa_ultimos_quatro_digitos])
             ->get()->toArray();
 
