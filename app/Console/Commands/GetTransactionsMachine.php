@@ -50,17 +50,22 @@ class GetTransactionsMachine extends Command
                     $id_placa = $machineData->deviceId;
                     $transacoes_maquina = $machineData->transactions;
     
-                    $id_maquina = $maquinas[$id_placa]['id_maquina'];
-                    foreach ($transacoes_maquina as $transacao) {
-                        // Adicione os dados no array de inserções
-                        $insercoes[] = [
-                            "id_maquina" => $id_maquina,
-                            "id_end_to_end" => $transacao->transaction_id,
-                            "extrato_operacao" => "C",
-                            "extrato_operacao_tipo" => "Dinheiro",
-                            "extrato_operacao_valor" => $transacao->credits,
-                            "extrato_operacao_status" => 1
-                        ];
+                    if(property_exists($maquinas, $id_placa)){
+
+                        $id_maquina = $maquinas[$id_placa]['id_maquina'];
+                        foreach ($transacoes_maquina as $transacao) {
+                            // Adicione os dados no array de inserções
+                            $insercoes[] = [
+                                "id_maquina" => $id_maquina,
+                                "id_end_to_end" => $transacao->transaction_id,
+                                "extrato_operacao" => "C",
+                                "extrato_operacao_tipo" => "Dinheiro",
+                                "extrato_operacao_valor" => $transacao->credits,
+                                "extrato_operacao_status" => 1
+                            ];
+                        }
+                    }else{
+                        continue;
                     }
                 }
     
