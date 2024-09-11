@@ -103,7 +103,6 @@ class WebhookController extends Controller
                 } while ($resposta['http_code'] != 200);
                 //Salvar a transacao
 
-                return "caio aqui";
                 $dadosExtrato = [
                     [
                     "id_maquina" => $id_maquina,
@@ -133,6 +132,7 @@ class WebhookController extends Controller
                     $id_transacao = ExtratoMaquina::where('id_maquina', $id_maquina)->where('id_end_to_end', $idE2E);
                     $devolucao = GestaoPixService::solicitarDevolucao($token, $idE2E, $id_transacao, $valor, $dadoCredDescriptografado['caminho_certificado']);
 
+                    return $devolucao;
                     if($devolucao['http_code'] == 200){
                         $dadosExtrato = [
                                 [
