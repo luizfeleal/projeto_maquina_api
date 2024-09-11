@@ -42,7 +42,13 @@ class WebhookController extends Controller
             $valor = intval($webhook['pix'][0]['valor']);
             $tarifa = $webhook['pix'][0]['gnExtras']['tarifa'];
 
-            $id_placa = intval(substr($txid, -8));
+            $id_placa_ultimos_quatro_digitos = intval(substr($txid, -4));
+
+            $id_placa = DB::table('maquinas')
+            ->whereRaw('RIGHT(id_placa, 4) = ?', [$id_placa_ultimos_quatro_digitos])
+            ->get()->toArray();
+
+            $id_placa = $id_placa[0]['id_placa'];
 
             //Tentar liberar jogada
 

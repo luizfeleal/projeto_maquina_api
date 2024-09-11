@@ -110,7 +110,7 @@ class QrController extends Controller
             #RESGATAR ID PLACA DA MÁQUINA ESCOLHIDA
             $maquina = Maquinas::find($id_maquina);
             
-            $id_placa = $maquina['id_placa'];
+            $id_placa = substr($maquina['id_placa'], -4);
             #GERAR TXID
             $txid = (new QrCodeService)->criarTxidComIdPlaca($id_placa);
 
@@ -122,7 +122,7 @@ class QrController extends Controller
                                       ->setDescricao('Pagamento')
                                       ->setNomeTitularConta($partesNome[0])
                                       ->setNomeCidadeTitularConta("PARANA")
-                                      ->setTxid("12324324")
+                                      ->setTxid($txid)
                                       ->setValorTransacao(0.00);
 
             $payloadQrCode = $payload->getPayload();
