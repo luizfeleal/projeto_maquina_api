@@ -77,8 +77,6 @@ class QrController extends Controller
 
                $token = AuthService::coletarToken($dadoCredDescriptografado);
 
-               return $token;
-
                 $criarChavePix = ChaveAleatoriaService::criarChaveAleatoria($token, $dadoCredDescriptografado['caminho_certificado']);
 
                 return $criarChavePix;
