@@ -51,8 +51,6 @@ class QrController extends Controller
      */
     public function store(Request $request)
     {
-
-        return $request;
         
         try {
             $dados = $request->all();
@@ -66,7 +64,7 @@ class QrController extends Controller
             $id_cliente = $request['id_cliente'];
             $cred_api_pix = CredApiPix::where('id_cliente', $id_cliente)->get()[0];
 
-            return $id_cliente;
+            return $cred_api_pix;
 
             $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($cred_api_pix);
             $coletarChavePix = ChavePix::where('id_cliente', $id_cliente)->get();
