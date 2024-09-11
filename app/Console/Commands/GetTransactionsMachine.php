@@ -8,6 +8,7 @@ use App\Models\ExtratoMaquina;
 use App\Services\Hardware\MaquinasService;
 use App\Services\Hardware\AuthService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class GetTransactionsMachine extends Command
 {
