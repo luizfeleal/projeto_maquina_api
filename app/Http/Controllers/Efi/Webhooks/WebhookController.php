@@ -59,6 +59,11 @@ class WebhookController extends Controller
             $id_placa = $id_placa_result[0]->id_placa;
             $id_maquina = $id_placa_result[0]->id_maquina;
 
+            $cliente_local = ClienteLocal::where('id_local', $id_placa_result[0]->id_local)->where('cliente_local_principal', 1)->get()->toArray();
+
+            $id_cliente = $cliente_local[0]->id_cliente;
+            $cliente_credencial = CredApiPix::where('id_cliente', $id_cliente)->get()->toArray();
+
 
             //Tentar liberar jogada
 
@@ -126,7 +131,7 @@ class WebhookController extends Controller
 
                 if($gerarDevolucao == true){
                     $id_cliente = $request['id_cliente'];
-                    $cred_api_pix = CredApiPix::where('id_cliente', $id_cliente)->get()[0];
+                    $cred_api_pix = $cliente_credencial[0];
 
                     $dadoCredDescriptografado = DescriptografaService::descriptografarCred($cred_api_pix);
                     $token = AuthService::coletarToken($dadoCredDescriptografado);
