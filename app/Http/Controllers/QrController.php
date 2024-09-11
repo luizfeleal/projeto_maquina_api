@@ -118,14 +118,11 @@ class QrController extends Controller
     
             // Retorna a primeira parte do nome
             
-            return $cliente['cliente_cidade'];
-            $payload = (new QrCodeService)->setChavePix("a1a5e54d-6834-4fc8-94ca-8e1d225e77b0")
+            $payload = (new QrCodeService)->setChavePix($chavePix)
                                       ->setDescricao('Pagamento')
                                       ->setNomeTitularConta($partesNome[0])
-                                      //->setNomeTitularConta("TESTE")
-                                      //->setNomeCidadeTitularConta("TTESTE")
-                                      ->setNomeCidadeTitularConta($cliente['cliente_cidade'])
-                                      ->setTxid("12323466")
+                                      ->setNomeCidadeTitularConta("PARANA")
+                                      ->setTxid($txid)
                                       ->setValorTransacao(0.00);
 
             $payloadQrCode = $payload->getPayload();
