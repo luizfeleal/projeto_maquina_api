@@ -64,6 +64,7 @@ class QrController extends Controller
             $id_cliente = $request['id_cliente'];
             $get_cred_api_pix = CredApiPix::where('id_cliente', $id_cliente)->where('tipo_cred', "efi")->get();
 
+            return $id_cliente;
             if(empty($cred_api_pix)){
                 return response()->json(['message' => 'Não foi encontrada uma credencial registrada para o cliente informado.'], 400);
             }
