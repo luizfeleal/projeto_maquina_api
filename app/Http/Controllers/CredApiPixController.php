@@ -42,7 +42,6 @@ class CredApiPixController extends Controller
             }*/
             $id_cliente = $dados['id_cliente'];
 
-
             $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], "Certificados", $id_cliente);
 
            \Log::info($converter_arquivo_p12_para_pem);
