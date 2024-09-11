@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Efi\Webhooks;
 
 use App\Models\AcessosTela;
+use App\Models\ClienteLocal;
+use App\Models\CredApiPix;
+use App\Models\AcessosTela;
 use App\Models\Logs;
 use App\Models\ExtratoMaquina;
 use App\Services\Efi\GestaoPixService;
