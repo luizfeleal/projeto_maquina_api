@@ -70,6 +70,7 @@ class GetTransactionsMachine extends Command
                 
                 // Execute a inserção em massa
                 $extratoMaquina = ExtratoMaquina::insert($insercoes);
+                \Log::info($insercoes);
                 \Log::info($extratoMaquina);
                 
                 // Confirma a transação
