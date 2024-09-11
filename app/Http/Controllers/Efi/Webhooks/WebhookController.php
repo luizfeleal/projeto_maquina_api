@@ -129,6 +129,7 @@ class WebhookController extends Controller
                 
                 $extrato = ExtratoMaquina::insert($dadosExtrato);
 
+                $gerarDevolucao == true;
                 if($gerarDevolucao == true){
                     $id_cliente = $request['id_cliente'];
                     $cred_api_pix = $cliente_credencial[0];
