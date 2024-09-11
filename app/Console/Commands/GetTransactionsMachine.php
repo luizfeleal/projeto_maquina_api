@@ -39,33 +39,39 @@ class GetTransactionsMachine extends Command
         try {
             $token = AuthService::coletarToken();
             $transacoes = MaquinasService::coletarTransaçõesMaquina($token);
-            \Log::info($transacoes);
-            $maquinas = Maquinas::all()->keyBy('id_placa');
-            $insercoes = []; // Array para armazenar os dados que serão inseridos em massa
+            if($transacoes['http_code'] == 200){
 
-            foreach ($transacoes as $machineData) {
-                $id_placa = $machineData->deviceId;
-                $transacoes_maquina = $machineData->transactions;
-
-                $id_maquina = $maquinas[$id_placa]['id_maquina'];
-                foreach ($transacoes_maquina as $transacao) {
-                    // Adicione os dados no array de inserções
-                    $insercoes[] = [
-                        "id_maquina" => $id_maquina,
-                        "id_end_to_end" => $transacao->transaction_id,
-                        "extrato_operacao" => "C",
-                        "extrato_operacao_tipo" => "Dinheiro",
-                        "extrato_operacao_valor" => $transacao->credits,
-                        "extrato_operacao_status" => 1
-                    ];
+                $transacoes = $transacoes['resposta'];
+                \Log::info($transacoes);
+                $maquinas = Maquinas::all()->keyBy('id_placa');
+                $insercoes = []; // Array para armazenar os dados que serão inseridos em massa
+    
+                foreach ($transacoes as $machineData) {
+                    $id_placa = $machineData[0]->deviceId;
+                    $transacoes_maquina = $machineData->transactions;
+    
+                    $id_maquina = $maquinas[$id_placa]['id_maquina'];
+                    foreach ($transacoes_maquina as $transacao) {
+                        // Adicione os dados no array de inserções
+                        $insercoes[] = [
+                            "id_maquina" => $id_maquina,
+                            "id_end_to_end" => $transacao->transaction_id,
+                            "extrato_operacao" => "C",
+                            "extrato_operacao_tipo" => "Dinheiro",
+                            "extrato_operacao_valor" => $transacao->credits,
+                            "extrato_operacao_status" => 1
+                        ];
+                    }
                 }
+    
+                // Execute a inserção em massa
+                ExtratoMaquina::insert($insercoes);
+    
+                // Confirma a transação
+                DB::commit();
+            }else{
+                DB::rollBack();
             }
-
-            // Execute a inserção em massa
-            ExtratoMaquina::insert($insercoes);
-
-            // Confirma a transação
-            DB::commit();
         } catch (\Exception $e) {
             // Em caso de erro, faça o rollback da transação
             DB::rollBack();
