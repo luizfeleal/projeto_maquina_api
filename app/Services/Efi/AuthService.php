@@ -48,7 +48,6 @@ class AuthService
 //        var_dump(curl_exec($curl));
 
         $returnAuth = json_decode(curl_exec($curl), true);
-        return $returnAuth;
         $access_token = $returnAuth['access_token'];
         curl_close($curl);
 
