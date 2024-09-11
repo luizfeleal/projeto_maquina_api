@@ -43,7 +43,10 @@ class WebhookController extends Controller
 
             $txid = $webhook['pix'][0]['txid'];
             $valor = intval($webhook['pix'][0]['valor']);
-            $tarifa = $webhook['pix'][0]['gnExtras']['tarifa'];
+            $tarifa = 0;
+            if (isset($webhook['pix'][0]['gnExtras']['tarifa'])) {
+                $tarifa = $webhook['pix'][0]['gnExtras']['tarifa'];
+            }
 
             $id_placa_ultimos_quatro_digitos = intval(substr($txid, -4));
 
