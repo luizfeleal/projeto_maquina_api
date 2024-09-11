@@ -75,7 +75,6 @@ class WebhookController extends Controller
 
                     $token = AuthService::coletarToken();
                     $resposta = JogadasService::liberarJogada($id_placa, $valor, $idE2E, $token);
-                    return $resposta;
                     \Log::info('hardware----------------------');
                     \Log::info($resposta);
                     $tentativas++;
