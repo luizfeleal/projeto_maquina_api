@@ -42,16 +42,15 @@ class GetTransactionsMachine extends Command
             if($transacoes['http_code'] == 200){
 
                 $transacoes = $transacoes['resposta'];
-                \Log::info($transacoes);
                 $maquinas = Maquinas::all()->keyBy('id_placa');
                 $insercoes = []; // Array para armazenar os dados que serão inseridos em massa
-    
+                
                 foreach ($transacoes as $machineData) {
                     $id_placa = $machineData->deviceId;
                     $transacoes_maquina = $machineData->transactions;
-    
+                    
                     if(property_exists($maquinas, $id_placa)){
-
+                        
                         $id_maquina = $maquinas[$id_placa]['id_maquina'];
                         foreach ($transacoes_maquina as $transacao) {
                             // Adicione os dados no array de inserções
@@ -68,10 +67,11 @@ class GetTransactionsMachine extends Command
                         continue;
                     }
                 }
-    
+                
                 // Execute a inserção em massa
-                ExtratoMaquina::insert($insercoes);
-    
+                $extratoMaquina = ExtratoMaquina::insert($insercoes);
+                \Log::info($extratoMaquina);
+                
                 // Confirma a transação
                 DB::commit();
             }else{
