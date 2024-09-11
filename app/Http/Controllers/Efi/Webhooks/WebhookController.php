@@ -6,6 +6,8 @@ use App\Models\AcessosTela;
 use App\Models\Logs;
 use App\Models\ExtratoMaquina;
 use App\Services\Efi\GestaoPixService;
+use App\Services\Hardware\JogadasService;
+use App\Services\Hardware\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -68,7 +70,9 @@ class WebhookController extends Controller
             $gerarDevolucao = false;
 
                 do {
-                    $resposta = JogadasService::liberarJogada($id_placa, $valor);
+
+                    $token = AuthService::coletarToken();
+                    $resposta = JogadasService::liberarJogada($id_placa, $valor, $idE2E, $token);
                     \Log::info('hardware----------------------');
                     \Log::info($resposta);
                     $tentativas++;
