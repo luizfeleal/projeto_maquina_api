@@ -119,11 +119,11 @@ class QrController extends Controller
             // Retorna a primeira parte do nome
             
             $payload = (new QrCodeService)->setChavePix("a1a5e54d-6834-4fc8-94ca-8e1d225e77b0")
-                                      ->setDescricao('Pagamento')
-                                      ->setNomeTitularConta("luiz")
+                                      ->setDescricao('teste')
+                                      ->setNomeTitularConta("LUIZ")
                                       ->setNomeCidadeTitularConta("TESTE")
                                       ->setTxid("123212313")
-                                      ->setValorTransacao(10.00);
+                                      ->setValorTransacao(0.00);
 
             $payloadQrCode = $payload->getPayload();
             
