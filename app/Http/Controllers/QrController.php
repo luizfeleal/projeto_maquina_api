@@ -62,9 +62,13 @@ class QrController extends Controller
             #COLETAR CHAVE PIX
             #CASO NÃO TENHA, CRIAR A CHAVE NA EFÍ E REALIZAR O CADASTRO DA CHAVE NA BASE
             $id_cliente = $request['id_cliente'];
-            $cred_api_pix = CredApiPix::where('id_cliente', $id_cliente)->get()[0];
+            $get_cred_api_pix = CredApiPix::where('id_cliente', $id_cliente)->get();
 
-            return $cred_api_pix;
+            if(empty($cred_api_pix)){
+                return response()->json(['message' => 'Não foi encontrada uma credencial registrada para o cliente informado.'], 400);
+            }
+
+            $cred_api_pix = $get_cred_api_pix[0];
 
             $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($cred_api_pix);
             $coletarChavePix = ChavePix::where('id_cliente', $id_cliente)->get();
