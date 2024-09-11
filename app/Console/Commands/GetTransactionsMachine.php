@@ -49,7 +49,7 @@ class GetTransactionsMachine extends Command
                     $id_placa = $machineData->deviceId;
                     $transacoes_maquina = $machineData->transactions;
                     
-                    if(array_key_exists($id_placa, $maquinas)){
+                    if($maquinas->has($id_placa)){
                         
                         $id_maquina = $maquinas[$id_placa]['id_maquina'];
                         foreach ($transacoes_maquina as $transacao) {
