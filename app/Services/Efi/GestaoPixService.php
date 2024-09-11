@@ -29,6 +29,12 @@ class GestaoPixService
             "certificado" => $certificado, // certificado em .pem de produção ou homologação
             ];
 
+            $body = [
+                "valor"=> $valor
+            ];
+
+            $body_json = json_encode($body);
+
 
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -40,7 +46,7 @@ class GestaoPixService
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "PUT",
-        CURLOPT_POSTFIELDS => '{"valor" : '. $valor . '}',
+        CURLOPT_POSTFIELDS => $body_json,
         CURLOPT_SSLCERT => $config["certificado"], // Caminho do certificado
         CURLOPT_SSLCERTPASSWD => "",
         CURLOPT_HTTPHEADER => array(
