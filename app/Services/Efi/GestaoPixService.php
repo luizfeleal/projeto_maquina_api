@@ -25,7 +25,11 @@ class GestaoPixService
 
         $homolog = false; // false para produção
 
-        $valor_formatado = number_format($valor, 2, '.', ''); // Formata para 2 casas decimais
+        $config = [
+            "certificado" => $certificado, // certificado em .pem de produção ou homologação
+            ];
+
+            $valor_formatado = number_format($valor, 2, '.', ''); // Formata para 2 casas decimais
 
 $body = [
     "valor" => $valor_formatado // O valor agora é uma string que corresponde ao padrão
