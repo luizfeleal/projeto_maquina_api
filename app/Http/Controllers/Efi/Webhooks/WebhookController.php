@@ -63,6 +63,7 @@ class WebhookController extends Controller
 
                 do {
                     $resposta = JogadasService::liberarJogada($id_placa, $valor);
+                    \Log::info($resposta);
                     $tentativas++;
                     
                     // Verifica se o http_code é 200
