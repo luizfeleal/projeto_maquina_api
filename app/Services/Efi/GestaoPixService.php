@@ -31,13 +31,12 @@ class GestaoPixService
 
             $valor_formatado = number_format($valor, 2, '.', ''); // Formata para 2 casas decimais
 
-$body = [
-    "valor" => $valor_formatado // O valor agora é uma string que corresponde ao padrão
-];
+            $body = [
+                "valor" => $valor_formatado // O valor agora é uma string que corresponde ao padrão
+            ];
 
-$body_json = json_encode($body, JSON_UNESCAPED_UNICODE);
+            $body_json = json_encode($body, JSON_UNESCAPED_UNICODE);
 
-echo $body_json;
             
 
 
