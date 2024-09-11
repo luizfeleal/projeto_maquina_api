@@ -41,7 +41,7 @@ class CheckActiveMachines extends Command
             $id = $machineData->id;
             $lastPing = $machineData->lastPing;
             $machine = Maquinas::where('id_placa', $id)->first();
-            \Log::info($id);
+            
 
 
             if ($machine) {
