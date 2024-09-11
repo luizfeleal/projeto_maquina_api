@@ -96,8 +96,6 @@ class WebhookController extends Controller
                         ]);
                         
                         //Fazer o estorno aqui
-
-                        return "não consegui";
                         break;
 
                     }
@@ -105,6 +103,7 @@ class WebhookController extends Controller
                 } while ($resposta['http_code'] != 200);
                 //Salvar a transacao
 
+                return "caio aqui";
                 $dadosExtrato = [
                     [
                     "id_maquina" => $id_maquina,
