@@ -25,6 +25,9 @@ class GestaoPixService
 
         $homolog = false; // false para produção
 
+        $config = [
+            "certificado" => $certificado, // certificado em .pem de produção ou homologação
+            ];
 
 
         $curl = curl_init();
