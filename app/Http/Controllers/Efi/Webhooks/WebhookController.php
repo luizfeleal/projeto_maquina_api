@@ -38,6 +38,7 @@ class WebhookController extends Controller
                 return response()->json(['message' => "URL OK"], 200);
             }
 
+            $webhook = $request;
             $idE2E = $webhook['pix'][0]['endToEndId'];
 
             $txid = $webhook['pix'][0]['txid'];

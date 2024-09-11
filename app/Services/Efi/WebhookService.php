@@ -42,7 +42,7 @@ class WebhookService
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "PUT",
-        CURLOPT_POSTFIELDS => '{"webhookUrl": "https://services.swiftpaysolucoes.com/api/webhook/efi?ignorar="}',
+        CURLOPT_POSTFIELDS => '{"webhookUrl": "https://services.swiftpaysolucoes.com/api/webhook/efi/pix?ignorar="}',
         CURLOPT_SSLCERT => $config["certificado"], // Caminho do certificado
         CURLOPT_SSLCERTPASSWD => "",
         CURLOPT_HTTPHEADER => array(
