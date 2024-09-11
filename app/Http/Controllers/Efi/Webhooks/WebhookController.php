@@ -29,13 +29,15 @@ class WebhookController extends Controller
     public function processamentoRequisicaoInicial(Request $request)
     {
 
+        \Log::info('webhook ----------------------');
+        \Log::info($request);
         try {
 
             DB::beginTransaction();
-		\Log::info($request);
 	    if($request['evento'] && $request['evento'] == "teste_webhook"){
                 return response()->json(['message' => "URL OK"], 200);
             }
+
             $idE2E = $webhook['pix'][0]['endToEndId'];
 
             $txid = $webhook['pix'][0]['txid'];
@@ -63,6 +65,7 @@ class WebhookController extends Controller
 
                 do {
                     $resposta = JogadasService::liberarJogada($id_placa, $valor);
+                    \Log::info('hardware----------------------');
                     \Log::info($resposta);
                     $tentativas++;
                     
