@@ -30,10 +30,11 @@ class GestaoPixService
             ];
 
             $body = [
-                "valor"=> $valor
+                "valor" => (string) $valor // Converte o valor para string explicitamente
             ];
-
-            $body_json = json_encode($body);
+            
+            $body_json = json_encode($body, JSON_UNESCAPED_UNICODE); // Evita problemas com caracteres especiais
+            
 
 
         $curl = curl_init();
