@@ -21,38 +21,34 @@ class GestaoPixService
             throw new \Exception("O arquivo de certificado não foi encontrado: " . $certificado);
         }
 
-        $url = env('URL_EFI') . " /v2/pix/{$e2eId}/devolucao/{$idTransacao}";
-
-        // Inicializa a sessão cURL
-        $ch = curl_init($url);
-
-
-        $data = array(
-            "valor" => $valor
-        );
-        $data_string = json_encode($data);
-        curl_setopt_array(
-            $ch,
-            array(
-                CURLOPT_CUSTOMREQUEST => 'PUT',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POSTFIELDS => $data_string,
-                CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token],
-                CURLOPT_SSL_VERIFYPEER => true, // Verifica o certificado do servidor
-                CURLOPT_SSL_VERIFYHOST => 2, // Verifica o host do certificado
-                CURLOPT_SSLCERT => $certificado // Define o certificado a ser usado
-            )
-        );
-
-        $result = curl_exec($ch);
-
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
         
-        if (curl_errno($ch)) {
-            throw new \Exception("Erro durante a requisição cURL: " . curl_error($ch));
-        }
-        curl_close($ch);
+
+        $homolog = false; // false para produção
+
+
+
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => $homolog ? "https://pix-h.api.efipay.com.br". "/v2/pix/{$e2eId}/devolucao/{$idTransacao}" : "https://pix.api.efipay.com.br" . "/v2/pix/{$e2eId}/devolucao/{$idTransacao}",
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 8,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "PUT",
+        CURLOPT_POSTFIELDS => '{"valor" : '. $valor . '}',
+        CURLOPT_SSLCERT => $config["certificado"], // Caminho do certificado
+        CURLOPT_SSLCERTPASSWD => "",
+        CURLOPT_HTTPHEADER => array(
+        "Authorization: Bearer ".$token,
+        "Content-Type: application/json",
+        "x-skip-mtls-checking: true"
+        ),
+        ));
+
+        $result = json_decode(curl_exec($curl), true);
+        curl_close($curl);
 
         $resposta = [
             "http_code" => $httpcode,
