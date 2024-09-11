@@ -48,6 +48,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
     Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
     Route::get('extrato/acumulado','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachine');
+    Route::get('extrato/acumuladoLocal','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachineFromLocal');
     Route::get('totalMaquinas','App\Http\Controllers\ExtratoMaquinaController@getTheLastTransactionPerMachine');
     Route::apiResource('locais','App\Http\Controllers\LocaisController');
     Route::apiResource('QRCode','App\Http\Controllers\QrController');
