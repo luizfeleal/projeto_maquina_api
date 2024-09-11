@@ -54,7 +54,7 @@ class WebhookController extends Controller
             ->whereRaw('RIGHT(id_placa, 4) = ?', [$id_placa_ultimos_quatro_digitos])
             ->get()->toArray();
 
-            $id_placa = $id_placa[0]['id_placa'];
+            $id_placa = $id_placa_result[0]->id_placa;
 
             //Tentar liberar jogada
 
