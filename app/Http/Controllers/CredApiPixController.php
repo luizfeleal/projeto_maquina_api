@@ -59,7 +59,8 @@ class CredApiPixController extends Controller
                     "id_cliente" => $dados['id_cliente'],
                     "client_secret" => Crypt::encryptString($dados['client_secret']),
                     "client_id" => Crypt::encryptString($dados['client_id']),
-                    "caminho_certificado" => Crypt::encryptString($caminho)
+                    "caminho_certificado" => Crypt::encryptString($caminho),
+                    "tipo_cred" => $dados['tipo_cred']
                 ]);
                 $cred->save();
                 return response()->json(['message' => 'Credencial cadastrada com sucesso!', 'response' => $cred], 201);
