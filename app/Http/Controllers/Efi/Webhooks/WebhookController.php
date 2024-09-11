@@ -8,6 +8,8 @@ use App\Models\ClienteLocal;
 use App\Models\Logs;
 use App\Models\ExtratoMaquina;
 use App\Services\Efi\GestaoPixService;
+use App\Services\Efi\AuthService as AuthEfiService;
+use App\Services\Efi\DescriptografaCredService;
 use App\Services\Hardware\JogadasService;
 use App\Services\Hardware\AuthService;
 use Illuminate\Http\Request;
@@ -137,7 +139,7 @@ class WebhookController extends Controller
                     $cred_api_pix = $cliente_credencial[0];
 
                     $dadoCredDescriptografado = DescriptografaService::descriptografarCred($cred_api_pix);
-                    $token = AuthService::coletarToken($dadoCredDescriptografado);
+                    $token = AuthEfiService::coletarToken($dadoCredDescriptografado);
                     $id_transacao = ExtratoMaquina::where('id_maquina', $id_maquina)->where('id_end_to_end', $idE2E);
                     $devolucao = GestaoPixService::solicitarDevolucao($token, $idE2E, $id_transacao, $valor, $dadoCredDescriptografado['caminho_certificado']);
 
