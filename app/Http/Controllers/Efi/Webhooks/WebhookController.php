@@ -138,7 +138,7 @@ class WebhookController extends Controller
                     $id_cliente = $request['id_cliente'];
                     $cred_api_pix = $cliente_credencial[0];
 
-                    $dadoCredDescriptografado = DescriptografaService::descriptografarCred($cred_api_pix);
+                    $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($cred_api_pix);
                     $token = AuthEfiService::coletarToken($dadoCredDescriptografado);
                     $id_transacao = ExtratoMaquina::where('id_maquina', $id_maquina)->where('id_end_to_end', $idE2E);
                     $devolucao = GestaoPixService::solicitarDevolucao($token, $idE2E, $id_transacao, $valor, $dadoCredDescriptografado['caminho_certificado']);
