@@ -25,15 +25,15 @@ class GestaoPixService
 
         $homolog = false; // false para produção
 
-        $config = [
-            "certificado" => $certificado, // certificado em .pem de produção ou homologação
-            ];
+        $valor_formatado = number_format($valor, 2, '.', ''); // Formata para 2 casas decimais
 
-            $body = [
-                "valor" => (string) $valor // Converte o valor para string explicitamente
-            ];
-            
-            $body_json = json_encode($body, JSON_UNESCAPED_UNICODE); // Evita problemas com caracteres especiais
+$body = [
+    "valor" => $valor_formatado // O valor agora é uma string que corresponde ao padrão
+];
+
+$body_json = json_encode($body, JSON_UNESCAPED_UNICODE);
+
+echo $body_json;
             
 
 
