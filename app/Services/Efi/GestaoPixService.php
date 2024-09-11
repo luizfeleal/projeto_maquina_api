@@ -54,7 +54,7 @@ class GestaoPixService
         curl_close($curl);
 
         $resposta = [
-            "result" => json_decode($result)
+            "result" => $result
         ];
 
         return $resposta;
