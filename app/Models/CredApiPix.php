@@ -13,7 +13,8 @@ class CredApiPix extends Model
         'id_cliente',
         'client_id',
         'client_secret',
-        'caminho_certificado'
+        'caminho_certificado',
+        'tipo_cred'
     ];
 
     public static function rules($id = null)
@@ -22,7 +23,8 @@ class CredApiPix extends Model
             "id_cliente" => "required",
             "client_id" => "required|string|max:200",
             "client_secret" => "required|string|max:200",
-            "caminho_certificado" => "required|string|max:200",
+            "caminho_certificado" => "string|max:200",
+            "tipo_cred" => "required"
         ];
      }
 
