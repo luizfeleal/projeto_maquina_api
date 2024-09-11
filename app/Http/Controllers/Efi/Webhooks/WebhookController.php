@@ -147,6 +147,7 @@ class WebhookController extends Controller
                         $dadosExtrato = [
                                 [
                                     "id_maquina" => $id_maquina,
+                                    "id_end_to_end" => $idE2E,
                                     "extrato_operacao" => "D",
                                     "extrato_operacao_tipo" => "Estorno",
                                     "extrato_operacao_valor" => $valor,
@@ -154,6 +155,7 @@ class WebhookController extends Controller
                                 ]
                             ];
                             $extrato = ExtratoMaquina::insert($dadosExtrato);
+
                         
                     }else{
 
