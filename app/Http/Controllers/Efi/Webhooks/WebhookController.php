@@ -63,7 +63,7 @@ class WebhookController extends Controller
 
             $cliente_local = ClienteLocal::where('id_local', $id_placa_result[0]->id_local)->where('cliente_local_principal', 1)->get()->toArray();
 
-            $id_cliente = $cliente_local[0]->id_cliente;
+            $id_cliente = $cliente_local[0]['id_cliente'];
             $cliente_credencial = CredApiPix::where('id_cliente', $id_cliente)->get()->toArray();
 
 
