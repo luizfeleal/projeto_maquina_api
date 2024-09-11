@@ -47,6 +47,8 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('acessosTela','App\Http\Controllers\AcessosTelaController');
     Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
     Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
+    Route::get('extrato/acumulado','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachine');
+    Route::get('totalMaquinas','App\Http\Controllers\ExtratoMaquinaController@getTheLastTransactionPerMachine');
     Route::apiResource('locais','App\Http\Controllers\LocaisController');
     Route::apiResource('QRCode','App\Http\Controllers\QrController');
     Route::apiResource('credApiPix','App\Http\Controllers\CredApiPixController');

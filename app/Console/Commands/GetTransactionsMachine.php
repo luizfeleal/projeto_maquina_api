@@ -86,7 +86,7 @@ class GetTransactionsMachine extends Command
             throw $e; // ou trate o erro da forma mais apropriada
         }
 
-        //MaquinasService::limparTransaçõesMaquinaAposColeta($token);
+        MaquinasService::limparTransaçõesMaquinaAposColeta($token);
         $this->info('Active machines checked successfully.');
         return Command::SUCCESS;
     }

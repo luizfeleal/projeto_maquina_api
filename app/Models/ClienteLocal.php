@@ -14,6 +14,7 @@ class ClienteLocal extends Model
     protected $fillable = [
         "id_cliente",
         "id_local",
+        "cliente_local_principal"
     ];
      public static function rules($id = null)
      {
