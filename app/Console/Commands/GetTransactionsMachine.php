@@ -40,7 +40,7 @@ class GetTransactionsMachine extends Command
             $token = AuthService::coletarToken();
             $transacoes = MaquinasService::coletarTransaçõesMaquina($token);
             \Log::info($transacoes);
-            $maquinas = MaquinasService::all()->keyBy('id_placa');
+            $maquinas = Maquinas::all()->keyBy('id_placa');
             $insercoes = []; // Array para armazenar os dados que serão inseridos em massa
 
             foreach ($transacoes as $machineData) {
