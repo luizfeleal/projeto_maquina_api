@@ -114,6 +114,7 @@ class WebhookController extends Controller
                     ],
                     [
                         "id_maquina" => $id_maquina,
+                        "id_end_to_end" => $idE2E,
                         "extrato_operacao" => "D",
                         "extrato_operacao_tipo" => "Taxa",
                         "extrato_operacao_valor" => $tarifa,
