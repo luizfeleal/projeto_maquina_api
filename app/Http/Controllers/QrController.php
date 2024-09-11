@@ -63,8 +63,8 @@ class QrController extends Controller
             #CASO NÃO TENHA, CRIAR A CHAVE NA EFÍ E REALIZAR O CADASTRO DA CHAVE NA BASE
             $id_cliente = $request['id_cliente'];
             $cred_api_pix = CredApiPix::where('id_cliente', $id_cliente)->get()[0];
-            
-            return $cred_api_pix;
+
+            return $id_cliente;
 
             $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($cred_api_pix);
             $coletarChavePix = ChavePix::where('id_cliente', $id_cliente)->get();
