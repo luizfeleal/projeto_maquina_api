@@ -71,19 +71,19 @@ class WebhookController extends Controller
             $resposta = null;
             $gerarDevolucao = false;
 
-                //do {
+                do {
 
                     $token = AuthService::coletarToken();
                     $resposta = JogadasService::liberarJogada($id_placa, $valor, $idE2E, $token);
                     return $resposta;
                     \Log::info('hardware----------------------');
                     \Log::info($resposta);
-                    //$tentativas++;
+                    $tentativas++;
                     
                     // Verifica se o http_code é 200
-                    //if ($resposta['http_code'] == 200) {
-                        //break;
-                    //}
+                    if ($resposta['http_code'] == 200) {
+                        break;
+                    }
                     
                     // Se atingir o número máximo de tentativas, exibe uma mensagem de erro ou realiza outra ação
                     if ($tentativas >= $maxTentativas) {
@@ -97,10 +97,13 @@ class WebhookController extends Controller
                         ]);
                         
                         //Fazer o estorno aqui
-                        //break;
+
+                        return "não consegui";
+                        break;
+
                     }
     
-                //} while ($resposta['http_code'] != 200);
+                } while ($resposta['http_code'] != 200);
                 //Salvar a transacao
 
                 $dadosExtrato = [
