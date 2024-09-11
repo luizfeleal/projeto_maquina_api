@@ -59,7 +59,6 @@ class WebhookController extends Controller
             $id_placa = $id_placa_result[0]->id_placa;
             $id_maquina = $id_placa_result[0]->id_maquina;
 
-            return $id_maquina;
 
             //Tentar liberar jogada
 
