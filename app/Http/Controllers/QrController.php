@@ -122,7 +122,7 @@ class QrController extends Controller
                                       ->setDescricao('teste')
                                       ->setNomeTitularConta("LUIZ")
                                       ->setNomeCidadeTitularConta("TESTE")
-                                      ->setTxid("123212313")
+                                      ->setTxid($txid)
                                       ->setValorTransacao(0.00);
 
             $payloadQrCode = $payload->getPayload();
