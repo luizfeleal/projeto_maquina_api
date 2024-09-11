@@ -51,6 +51,8 @@ class QrController extends Controller
      */
     public function store(Request $request)
     {
+
+        return $request;
         
         try {
             $dados = $request->all();
