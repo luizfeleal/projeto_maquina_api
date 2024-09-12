@@ -101,7 +101,8 @@ class WebhookController extends Controller
                         Logs::create([
                             "descricao" => "Erro ao tentar liberar jogadas, número de tentativas de comunicação com a máquina foi excedido.",
                             "status" => "erro",
-                            "acao" => "liberar jogada"
+                            "acao" => "liberar jogada",
+                            "id_maquina" => $id_maquina
                         ]);
                         
                         //Fazer o estorno aqui
@@ -166,7 +167,8 @@ class WebhookController extends Controller
                         Logs::create([
                             "descricao" => "Erro ao tentar efetuar a devolução do PIX. Informações: [id_maquina: $id_maquina]",
                             "status" => "erro",
-                            "acao" => "Devolução Pix"
+                            "acao" => "Devolução Pix",
+                            "id_maquina" => $id_maquina
                         ]);
                         \Log::error($devolucao);
                     }

@@ -40,16 +40,10 @@ class ExtratoMaquinaController extends Controller
             $totalRecords = $query->count();
         
             // Paginar os dados
-            $extrato = $query->offset($request->get('start', 0))
-                             ->limit($perPage)
-                             ->get();
+            $extrato = $query->get();
         
             // Responder no formato esperado pelo DataTables
-            return response()->json([
-                'data' => $extrato,
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $totalRecords // Se houver filtros, você deve atualizar isso para refletir o número filtrado
-            ], 200);
+            return response()->json($extrato, 200);
         }catch(Exception $e){
             return response()->json(500, 'Houve um erro ao tentar coletar o extrato.');
         }
@@ -280,6 +274,347 @@ class ExtratoMaquinaController extends Controller
     
         } catch (Exception $e) {
             return response()->json(['error' => 'Houve um erro ao tentar coletar os dados das máquinas.'], 500);
+        }
+    }
+
+    public function generateReportAllTransactions(Request $request)
+    {
+        try {
+            // Pegando os parâmetros de paginação
+            $perPage = $request->get('length', 25200); // Número de registros por página
+            $page = $request->get('start', 0) / $perPage + 1; // Página atual
+        
+            // Pegando os parâmetros de filtro
+            $clientes = $request->input('id_cliente', []); // array de IDs de clientes
+            $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
+            $locais = $request->input('id_local', []); // array de IDs de locais
+            $tipoTransacao = $request->input('tipo_transacao');
+            $dataInicio = $request->input('data_inicio');
+            $dataFim = $request->input('data_fim');
+        
+            // Iniciando a query
+            $query = DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+                ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
+                ->select(
+                    'locais.local_nome',
+                    'cliente_local.id_cliente',
+                    'maquinas.maquina_nome',
+                    'extrato_maquina.extrato_operacao',
+                    'extrato_maquina.extrato_operacao_valor',
+                    'extrato_maquina.extrato_operacao_tipo',
+                    'extrato_maquina.data_criacao'
+                );
+        
+            // Aplicando filtros para clientes (se múltiplos IDs foram passados)
+            if (!empty($clientes)) {
+                $query->whereIn('cliente_local.id_cliente', $clientes);
+            }
+        
+            // Aplicando filtros para máquinas (se múltiplos IDs foram passados)
+            if (!empty($maquinas)) {
+                $query->whereIn('maquinas.id_maquina', $maquinas);
+            }
+        
+            // Aplicando filtros para locais (se múltiplos IDs foram passados)
+            if (!empty($locais)) {
+                $query->whereIn('locais.id_local', $locais);
+            }
+        
+            // Aplicando filtro de tipo de transação
+            if ($tipoTransacao) {
+                $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
+            }
+        
+            // Aplicando filtro de data de início
+            if ($dataInicio) {
+                $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
+            }
+        
+            // Aplicando filtro de data de fim
+            if ($dataFim) {
+                $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
+            }
+        
+            // Total de registros após aplicar os filtros
+            $totalRecords = $query->count();
+        
+            // Paginar os dados
+            $extrato = $query->offset($request->get('start', 0))
+                             ->limit($perPage)
+                             ->get();
+        
+            // Responder no formato esperado pelo DataTables
+            return response()->json([
+                'data' => $extrato,
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $totalRecords // Se houver filtros, você deve atualizar isso para refletir o número filtrado
+            ], 200);
+        
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+        }
+    }
+
+    public function generateReportAllTransactionsGetTotal(Request $request)
+    {
+        try {
+            // Pegando os parâmetros de filtro
+            $perPage = $request->get('length', 10); // Número de registros por página
+            $page = $request->get('start', 0) / $perPage + 1; // Página atual
+        
+            // Pegando os parâmetros de filtro
+            $clientes = $request->input('id_cliente', []); // array de IDs de clientes
+            $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
+            $locais = $request->input('id_local', []); // array de IDs de locais
+            $tipoTransacao = $request->input('tipo_transacao');
+            $dataInicio = $request->input('data_inicio');
+            $dataFim = $request->input('data_fim');
+        
+            // Iniciando a query
+            $query = DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+                ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
+                ->select(
+                    'locais.local_nome',
+                    'cliente_local.id_cliente',
+                    'maquinas.maquina_nome',
+                    'extrato_maquina.extrato_operacao',
+                    'extrato_maquina.extrato_operacao_valor',
+                    'extrato_maquina.extrato_operacao_tipo',
+                    'extrato_maquina.data_criacao'
+                );
+        
+            // Aplicando filtros para clientes (se múltiplos IDs foram passados)
+            if (!empty($clientes)) {
+                $query->whereIn('cliente_local.id_cliente', $clientes);
+            }
+        
+            // Aplicando filtros para máquinas (se múltiplos IDs foram passados)
+            if (!empty($maquinas)) {
+                $query->whereIn('maquinas.id_maquina', $maquinas);
+            }
+        
+            // Aplicando filtros para locais (se múltiplos IDs foram passados)
+            if (!empty($locais)) {
+                $query->whereIn('locais.id_local', $locais);
+            }
+        
+            // Aplicando filtro de tipo de transação
+            if ($tipoTransacao) {
+                $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
+            }
+        
+            // Aplicando filtro de data de início
+            if ($dataInicio) {
+                $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
+            }
+        
+            // Aplicando filtro de data de fim
+            if ($dataFim) {
+                $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
+            }
+        
+            // Executando a query para obter os dados
+            $resultados = $query->get();
+        
+            // Tipos de transação definidos (padronizados para minúsculas)
+            $tiposDefinidos = ['estorno', 'pix', 'cartão', 'dinheiro'];
+        
+            // Calculando o total de extrato_operacao_valor por categoria de extrato_operacao_tipo
+            $totaisPorTipo = $resultados->groupBy(function ($item) {
+                // Padronizando o tipo de operação para minúsculas
+                return strtolower($item->extrato_operacao_tipo);
+            })->map(function ($items, $tipo) {
+                // Somando os valores para o tipo específico, ignorando valores nulos
+                $total = $items->sum(function ($item) {
+                    return $item->extrato_operacao_valor ?? 0; // Caso seja nulo, considerar 0
+                });
+        
+                return [
+                    'tipo' => ucfirst($tipo), // Retorna o tipo com a primeira letra maiúscula para consistência
+                    'total' => $total,
+                ];
+            })->values();
+        
+            // Garantindo que todos os tipos definidos estejam no resultado com zero se não existirem
+            foreach ($tiposDefinidos as $tipo) {
+                if (!$totaisPorTipo->contains('tipo', ucfirst($tipo))) {
+                    $totaisPorTipo->push([
+                        'tipo' => ucfirst($tipo),
+                        'total' => 0,
+                    ]);
+                }
+            }
+        
+            // Ordenando os tipos definidos na ordem desejada
+            $totaisPorTipo = $totaisPorTipo->sortBy(function ($item) use ($tiposDefinidos) {
+                return array_search(strtolower($item['tipo']), $tiposDefinidos);
+            })->values();
+        
+            // Retorno dos resultados
+            return response()->json($totaisPorTipo, 200);
+        
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+        }
+        
+    }
+
+    public function generateReportAllTransactionsTax(Request $request)
+    {
+        try {
+        
+            // Pegando os parâmetros de filtro
+            $clientes = $request->input('id_cliente', []); // array de IDs de clientes
+            $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
+            $locais = $request->input('id_local', []); // array de IDs de locais
+            $tipoTransacao = "Taxa";
+            $dataInicio = $request->input('data_inicio');
+            $dataFim = $request->input('data_fim');
+        
+            // Iniciando a query
+            $query = DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+                ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
+                ->select(
+                    'locais.local_nome',
+                    'cliente_local.id_cliente',
+                    'maquinas.maquina_nome',
+                    'extrato_maquina.extrato_operacao',
+                    'extrato_maquina.extrato_operacao_valor',
+                    'extrato_maquina.extrato_operacao_tipo',
+                    'extrato_maquina.data_criacao'
+                );
+        
+            // Aplicando filtros para clientes (se múltiplos IDs foram passados)
+            if (!empty($clientes)) {
+                $query->whereIn('cliente_local.id_cliente', $clientes);
+            }
+        
+            // Aplicando filtros para máquinas (se múltiplos IDs foram passados)
+            if (!empty($maquinas)) {
+                $query->whereIn('maquinas.id_maquina', $maquinas);
+            }
+        
+            // Aplicando filtros para locais (se múltiplos IDs foram passados)
+            if (!empty($locais)) {
+                $query->whereIn('locais.id_local', $locais);
+            }
+        
+            // Aplicando filtro de tipo de transação
+            if ($tipoTransacao) {
+                $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
+            }
+        
+            // Aplicando filtro de data de início
+            if ($dataInicio) {
+                $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
+            }
+        
+            // Aplicando filtro de data de fim
+            if ($dataFim) {
+                $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
+            }
+        
+            // Total de registros após aplicar os filtros
+            $totalRecords = $query->count();
+        
+            // Paginar os dados
+            $extrato = $query->get();
+        
+            // Responder no formato esperado pelo DataTables
+            return response()->json([
+                'data' => $extrato,
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $totalRecords // Se houver filtros, você deve atualizar isso para refletir o número filtrado
+            ], 200);
+        
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+        }
+    }
+
+    public function generateReportTaxTransactionsGetTotal(Request $request)
+    {
+        try {
+            // Pegando os parâmetros de paginação
+            $perPage = $request->get('length', 10); // Número de registros por página
+            $page = $request->get('start', 0) / $perPage + 1; // Página atual
+        
+            // Pegando os parâmetros de filtro
+            $clientes = $request->input('id_cliente', []); // array de IDs de clientes
+            $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
+            $locais = $request->input('id_local', []); // array de IDs de locais
+            $tipoTransacao = "Taxa";
+            $dataInicio = $request->input('data_inicio');
+            $dataFim = $request->input('data_fim');
+        
+            // Iniciando a query
+            $query = DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+                ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
+                ->select(
+                    'locais.local_nome',
+                    'cliente_local.id_cliente',
+                    'maquinas.maquina_nome',
+                    'extrato_maquina.extrato_operacao',
+                    'extrato_maquina.extrato_operacao_valor',
+                    'extrato_maquina.extrato_operacao_tipo',
+                    'extrato_maquina.data_criacao'
+                );
+        
+            // Aplicando filtros para clientes (se múltiplos IDs foram passados)
+            if (!empty($clientes)) {
+                $query->whereIn('cliente_local.id_cliente', $clientes);
+            }
+        
+            // Aplicando filtros para máquinas (se múltiplos IDs foram passados)
+            if (!empty($maquinas)) {
+                $query->whereIn('maquinas.id_maquina', $maquinas);
+            }
+        
+            // Aplicando filtros para locais (se múltiplos IDs foram passados)
+            if (!empty($locais)) {
+                $query->whereIn('locais.id_local', $locais);
+            }
+        
+            // Aplicando filtro de tipo de transação
+            if ($tipoTransacao) {
+                $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
+            }
+        
+            // Aplicando filtro de data de início
+            if ($dataInicio) {
+                $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
+            }
+        
+            // Aplicando filtro de data de fim
+            if ($dataFim) {
+                $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
+            }
+        
+            // Total de registros após aplicar os filtros
+            $totalRecords = $query->count();
+        
+            // Paginar os dados
+            $extrato = $query->offset($request->get('start', 0))
+                             ->limit($perPage)
+                             ->get();
+        
+            // Responder no formato esperado pelo DataTables
+            return response()->json([
+                'data' => $extrato,
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $totalRecords // Se houver filtros, você deve atualizar isso para refletir o número filtrado
+            ], 200);
+        
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
         }
     }
 }
