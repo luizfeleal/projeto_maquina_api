@@ -183,6 +183,46 @@ class ExtratoMaquinaController extends Controller
         }
     }
 
+    public static function acumulatedPerMachineOfClient(Request $request){
+        try {
+            // Ajusta a consulta para incluir todas as máquinas, mesmo sem registros de extrato
+            $id_cliente = $request->input('id_cliente');
+            $query = DB::table('maquinas')
+                ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
+                ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
+                ->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local') // Juntando locais com cliente_local
+                ->where('cliente_local.id_cliente', $id_cliente)
+                ->select(
+                    'locais.local_nome',
+                    'maquinas.maquina_nome',
+                    'maquinas.id_placa',
+                    'maquinas.maquina_status',
+                    DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
+                    DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
+                    DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
+                    DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
+                )
+                ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
+    
+            // Total de registros para a contagem
+            $totalRecords = DB::table('maquinas')->count();
+    
+            // Paginar os dados
+            $extrato = $query->offset($request->get('start', 0))
+                             ->limit($request->get('length', 10))
+                             ->get();
+    
+            // Responder no formato esperado pelo DataTables
+            return response()->json([
+                'data' => $extrato,
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $totalRecords
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+        }
+    }
+
     public function acumulatedPerMachineFromLocal(Request $request)
     {
 
