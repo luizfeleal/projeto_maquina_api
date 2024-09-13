@@ -45,7 +45,7 @@ class ExtratoMaquinaController extends Controller
             // Responder no formato esperado pelo DataTables
 
             return response()->json([
-                'data' => $query,
+                'data' => $extrato,
                 'recordsTotal' => $totalRecords,
                 'recordsFiltered' => $totalRecords
             ], 200);
