@@ -53,6 +53,8 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::post('relatorioTotalTransacoes','App\Http\Controllers\ExtratoMaquinaController@generateReportAllTransactions');
     Route::post('relatorioTotalTransacoesTotal','App\Http\Controllers\ExtratoMaquinaController@generateReportAllTransactionsGetTotal');
     Route::post('relatorioTotalTransacoesTaxa','App\Http\Controllers\ExtratoMaquinaController@generateReportAllTransactionsTax');
+    Route::post('transacaoMaquinaCliente','App\Http\Controllers\ExtratoMaquinaController@getTheLastTransactionPerMachineOfClient');
+    Route::post('totalTransacaoMaquinaCliente','App\Http\Controllers\ExtratoMaquinaController@indexClient');
     Route::apiResource('locais','App\Http\Controllers\LocaisController');
     Route::apiResource('QRCode','App\Http\Controllers\QrController');
     Route::apiResource('credApiPix','App\Http\Controllers\CredApiPixController');
