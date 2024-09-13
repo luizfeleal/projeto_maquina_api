@@ -40,7 +40,9 @@ class ExtratoMaquinaController extends Controller
             $totalRecords = $query->count();
         
             // Paginar os dados
-            $extrato = $query->get();
+            $extrato = $query->offset($request->get('start', 0))
+                             ->limit($perPage)
+                             ->get();
         
             // Responder no formato esperado pelo DataTables
 
