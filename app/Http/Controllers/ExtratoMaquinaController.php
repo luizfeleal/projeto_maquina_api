@@ -17,44 +17,68 @@ class ExtratoMaquinaController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
-    {
-        try{
-            //$extrato = ExtratoMaquina::paginate(1000);
-            // Pegando os parâmetros de paginação
-            $perPage = $request->get('length', 10); // Número de registros por página
-            $page = $request->get('start', 0) / $perPage + 1; // Página atual
-        
-            $query = DB::table('extrato_maquina')
-                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
-                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local') // Relaciona a tabela locais com a tabela maquinas
-                ->select(
-                    'locais.local_nome',
-                    'maquinas.maquina_nome',
-                    'extrato_maquina.extrato_operacao',
-                    'extrato_maquina.extrato_operacao_valor',
-                    'extrato_maquina.extrato_operacao_tipo',
-                    'extrato_maquina.data_criacao'
-                );
-        
-            // Total de registros
-            $totalRecords = $query->count();
-        
-            // Paginar os dados
-            $extrato = $query->offset($request->get('start', 0))
-                             ->limit($perPage)
-                             ->get();
-        
-            // Responder no formato esperado pelo DataTables
+{
+    try {
+        // Número de registros por página
+        $perPage = $request->get('length', 10); 
+        // Página atual
+        $page = $request->get('start', 0) / $perPage + 1;
 
-            return response()->json([
-                'data' => $extrato,
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $totalRecords
-            ], 200);
-        }catch(Exception $e){
-            return response()->json(500, 'Houve um erro ao tentar coletar o extrato.');
+        // Query base com joins
+        $query = DB::table('extrato_maquina')
+            ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+            ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->select(
+                'locais.local_nome',
+                'maquinas.maquina_nome',
+                'extrato_maquina.extrato_operacao',
+                'extrato_maquina.extrato_operacao_valor',
+                'extrato_maquina.extrato_operacao_tipo',
+                'extrato_maquina.data_criacao'
+            );
+
+        // Filtro de pesquisa
+        $search = $request->get('search'); // Valor da pesquisa do DataTables
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                // Adicione aqui as colunas que podem ser pesquisadas
+                $q->where('locais.local_nome', 'like', "%$search%")
+                  ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
+                  ->orWhere('extrato_maquina.extrato_operacao', 'like', "%$search%")
+                  ->orWhere('extrato_maquina.extrato_operacao_tipo', 'like', "%$search%")
+                  ->orWhere('extrato_maquina.extrato_operacao_valor', 'like', "%$search%")
+                  ->orWhere('extrato_maquina.data_criacao', 'like', "%$search%");
+            });
         }
+
+        // Total de registros (sem filtro)
+        $totalRecords = DB::table('extrato_maquina')
+            ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+            ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->count();
+
+        // Total de registros filtrados
+        $totalFiltered = $query->count();
+
+        // Paginar os dados
+        $extrato = $query->offset($request->get('start', 0))
+                         ->limit($perPage)
+                         ->get();
+
+        // Responder no formato esperado pelo DataTables
+        return response()->json([
+            'data' => $extrato,
+            'recordsTotal' => $totalRecords, // Total de registros sem filtro
+            'recordsFiltered' => $totalFiltered // Total de registros após o filtro
+        ], 200);
+    } catch (Exception $e) {
+        return response()->json([
+            'error' => 'Houve um erro ao tentar coletar o extrato.',
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
+
 
 
 
