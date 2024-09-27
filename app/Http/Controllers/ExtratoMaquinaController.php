@@ -174,7 +174,12 @@ class ExtratoMaquinaController extends Controller
     public function acumulatedPerMachine(Request $request)
     {
         try {
-            // Ajusta a consulta para incluir todas as máquinas, mesmo sem registros de extrato
+            // Número de registros por página
+            $perPage = $request->get('length', 10); 
+            // Página atual
+            $page = $request->get('start', 0) / $perPage + 1;
+        
+            // Query base com joins e COALESCE para totalizadores
             $query = DB::table('maquinas')
                 ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
                 ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
@@ -189,23 +194,41 @@ class ExtratoMaquinaController extends Controller
                     DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
                 )
                 ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
-    
-            // Total de registros para a contagem
+        
+            // Filtro de pesquisa
+            $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
+            if (!empty($search)) {
+                $query->where(function ($q) use ($search) {
+                    // Adicione aqui as colunas que podem ser pesquisadas
+                    $q->where('locais.local_nome', 'like', "%$search%")
+                      ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
+                      ->orWhere('maquinas.id_placa', 'like', "%$search%")
+                      ->orWhere('maquinas.maquina_status', 'like', "%$search%");
+                });
+            }
+        
+            // Total de registros sem filtro
             $totalRecords = DB::table('maquinas')->count();
-    
+        
+            // Total de registros filtrados
+            $totalFiltered = $query->count();
+        
             // Paginar os dados
             $extrato = $query->offset($request->get('start', 0))
-                             ->limit($request->get('length', 10))
+                             ->limit($perPage)
                              ->get();
-    
+        
             // Responder no formato esperado pelo DataTables
             return response()->json([
                 'data' => $extrato,
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $totalRecords
+                'recordsTotal' => $totalRecords, // Total de registros sem filtro
+                'recordsFiltered' => $totalFiltered // Total de registros após o filtro
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+            return response()->json([
+                'error' => 'Houve um erro ao tentar coletar o extrato.',
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -229,6 +252,17 @@ class ExtratoMaquinaController extends Controller
                     DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
                 )
                 ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
+
+                $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
+            if (!empty($search)) {
+                $query->where(function ($q) use ($search) {
+                    // Adicione aqui as colunas que podem ser pesquisadas
+                    $q->where('locais.local_nome', 'like', "%$search%")
+                      ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
+                      ->orWhere('maquinas.id_placa', 'like', "%$search%")
+                      ->orWhere('maquinas.maquina_status', 'like', "%$search%");
+                });
+            }
     
             // Total de registros para a contagem
             $totalRecords = DB::table('maquinas')->count();
@@ -433,12 +467,30 @@ class ExtratoMaquinaController extends Controller
                     'extrato_maquina.extrato_operacao_tipo',
                     'extrato_maquina.data_criacao'
                 );
+
+                // Filtro de pesquisa
+        $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                // Adicione aqui as colunas que podem ser pesquisadas
+                $q->where('locais.local_nome', 'like', "%$search%")
+                  ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
+                  ->orWhere('extrato_maquina.extrato_operacao', 'like', "%$search%")
+                  ->orWhere('extrato_maquina.extrato_operacao_tipo', 'like', "%$search%")
+                  ->orWhere('extrato_maquina.extrato_operacao_valor', 'like', "%$search%")
+                  ->orWhere('extrato_maquina.data_criacao', 'like', "%$search%");
+            });
+        }
         
             // Total de registros
             $totalRecords = $query->count();
         
             // Paginar os dados
-            $extrato = $query->get();
+            $extrato = $query->offset($request->get('start', 0))
+            ->limit($perPage)
+            ->get();
+
+
         
             // Responder no formato esperado pelo DataTables
             return response()->json([

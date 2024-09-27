@@ -16,13 +16,19 @@ class CredApiPixController extends Controller
     {
         try {
             $cred = CredApiPix::all();
+            return $cred;
 
             // Descriptografar os dados ao retorná-los
             foreach ($cred as $c) {
                 $c->client_secret = Crypt::decryptString($c->client_secret);
                 $c->client_id = Crypt::decryptString($c->client_id);
-                $c->caminho_certificado = Crypt::decryptString($c->caminho_certificado);
+                if(isset($c->caminho_certificado)){
+
+                    $c->caminho_certificado = Crypt::decryptString($c->caminho_certificado);
+                }
             }
+
+
 
             return response()->json($cred, 200);
         } catch (Exception $e) {
@@ -42,16 +48,20 @@ class CredApiPixController extends Controller
             }*/
             $id_cliente = $dados['id_cliente'];
 
-            $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], "Certificados", $id_cliente);
-
-           \Log::info($converter_arquivo_p12_para_pem);
-            
-            if($converter_arquivo_p12_para_pem['status'] == 200){
-                $caminho = $converter_arquivo_p12_para_pem['caminho_certificado'];
-            }else{
-                return response()->json(['message' => 'Houve um erro ao tentar cadastrar o certificado!', 'response' => $converter_arquivo_p12_para_pem], 500);
+            $caminho = null;
+            if(isset($request['caminho_certificado'])){
+                $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], "Certificados", $id_cliente);
+    
+               \Log::info($converter_arquivo_p12_para_pem);
+                
+                if($converter_arquivo_p12_para_pem['status'] == 200){
+                    $caminho = $converter_arquivo_p12_para_pem['caminho_certificado'];
+                }else{
+                    return response()->json(['message' => 'Houve um erro ao tentar cadastrar o certificado!', 'response' => $converter_arquivo_p12_para_pem], 500);
+                }
             }
 
+            
 
             return DB::transaction(function () use ($dados, $caminho) {
                 $cred = new CredApiPix();
@@ -59,7 +69,7 @@ class CredApiPixController extends Controller
                     "id_cliente" => $dados['id_cliente'],
                     "client_secret" => Crypt::encryptString($dados['client_secret']),
                     "client_id" => Crypt::encryptString($dados['client_id']),
-                    "caminho_certificado" => Crypt::encryptString($caminho),
+                    "caminho_certificado" => isset($caminho) ? Crypt::encryptString($caminho) : null,
                     "tipo_cred" => $dados['tipo_cred']
                 ]);
                 $cred->save();
