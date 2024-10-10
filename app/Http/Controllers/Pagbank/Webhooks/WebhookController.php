@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Efi\Webhooks;
+namespace App\Http\Controllers\Pagbank\Webhooks;
 
 use App\Models\AcessosTela;
 use App\Models\ClienteLocal;
