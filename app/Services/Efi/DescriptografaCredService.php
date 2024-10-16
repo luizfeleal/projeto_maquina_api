@@ -13,7 +13,7 @@ class DescriptografaCredService
         $dadosCredDescriptografado = [
             "client_id" => Crypt::decryptString($dadosCred['client_id']),
             "client_secret" => Crypt::decryptString($dadosCred['client_secret']),
-            "caminho_certificado" => Crypt::decryptString($dadosCred['caminho_certificado'])
+            "caminho_certificado" => isset($dadosCred['caminho_certificado']) ? Crypt::decryptString($dadosCred['caminho_certificado']) : ''
         ];
 
         return $dadosCredDescriptografado;
