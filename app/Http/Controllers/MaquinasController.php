@@ -22,11 +22,11 @@ class MaquinasController extends Controller
      */
     public function index()
     {
-        try{
+        try {
             $maquinas = Maquinas::all();
 
             return response()->json($maquinas, 200);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(500, 'Houve um erro ao tentar coletar as máquinas.');
         }
     }
@@ -50,11 +50,11 @@ class MaquinasController extends Controller
                 return response()->json(['errors' => $validator->errors()], 400);
             }
 
-$token = AuthService::coletarToken();
-//return array($request['id_placa']);
-$maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['id_placa']));
-	    if ($maquinaRegistrada["http_code"] != 200) {
-                return response()->json(['errors'=> "Houve um erro ao tentar cadastrar a máquina."], 400);
+            $token = AuthService::coletarToken();
+            //return array($request['id_placa']);
+            $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['id_placa']));
+            if ($maquinaRegistrada["http_code"] != 200) {
+                return response()->json(['errors' => "Houve um erro ao tentar cadastrar a máquina."], 400);
             }
 
             return DB::transaction(function () use ($dados) {
@@ -63,7 +63,6 @@ $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['
                 $maquinas->save();
                 return response()->json(['message' => 'Máquina cadastrada com sucesso!', 'response' => $maquinas], 201);
             });
-
         } catch (ValidationException $e) {
             return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 422);
         } catch (Exception $e) {
@@ -84,12 +83,12 @@ $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['
         try {
             $maquina = Maquinas::find($id);
 
-            if(!$maquina) {
+            if (!$maquina) {
                 return response()->json(["response" => "Máquina não encontrada"], 404);
             }
 
             return response()->json($maquina, 200);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(["response" => "Houve um erro ao tentar coletar a máquina de id: $id.", "error" => $e->getMessage()], 500);
         }
     }
@@ -103,11 +102,11 @@ $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['
      */
     public function update(Request $request, $id)
     {
-        try{
+        try {
 
             $dados = $request->all();
 
-            return DB::transaction(function() use ($dados, $id){
+            return DB::transaction(function () use ($dados, $id) {
                 $maquina = Maquinas::findOrFail($id);
 
                 $maquina->fill($dados);
@@ -115,7 +114,7 @@ $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['
 
                 return response()->json(['message' => 'Cliente atualizado com sucesso!', 'response' => $maquina], 200);
             });
-        }catch(\Exception $e) {
+        } catch (\Exception $e) {
             \Log::error($e);
 
             return response()->json(["message" => "Houve um erro ao tentar atualizar o cliente de id: $id.", "error" => $e->getMessage()], 500);
@@ -131,9 +130,9 @@ $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['
     public function destroy($id)
     {
         DB::beginTransaction();
-        try{
+        try {
             $token = AuthService::coletarToken();
-	    $maquinaService = MaquinasService::removerMaquina($token,$id);
+            $maquinaService = MaquinasService::removerMaquina($token, $id);
             $maquina = Maquinas::find($id);
             $maquina->delete();
             // Obter todos os registros com o id_maquina especificado
@@ -146,7 +145,7 @@ $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['
             DB::commit();
 
             return response()->json(["message" => "Máquina removida com sucesso!", "response" => true]);
-        }catch(Exception $e){
+        } catch (Exception $e) {
 
             DB::rollBack();
             \Log::error($e);

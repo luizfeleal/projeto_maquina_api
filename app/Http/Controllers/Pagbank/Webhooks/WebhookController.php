@@ -27,9 +27,9 @@ class WebhookController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return boolean
      */
-    public function processamentoWebhook(Request $request)
+    public function processamentoWebhook(Request $request) :bool
     {
         $dado = $request;
           
