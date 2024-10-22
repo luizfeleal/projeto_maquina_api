@@ -19,25 +19,13 @@ class ChecarPermissoesWebhook
     public function handle(Request $request, Closure $next)
     {
         
-        Log::info('Middleware ChecarPermissoes está sendo executado.');
+        $ip = $request->ip();
+        Log::info("Middleware ChecarPermissoes está sendo executado. Esse é o IP tentando acessar a API: $ip");
 
-        $allowedOrigins = [
-            'https://www.example.com',
-            'https://api.example.com'
-        ];
-
-        $origin = $request->headers->get('origin');
-        $userAgent = $request->headers->get('User-Agent');
-
-        /*if (!in_array($origin, $allowedOrigins)) {
-            Log::warning('Origem não permitida: ' . $origin);
-            return response()->json(['error' => 'Origem não permitida.'], 403);
-        }*/
-        /*if (strpos($userAgent, 'PostmanRuntime') === false && !in_array($origin, $allowedOrigins)) {
-            Log::warning('Origem não permitida: ' . $origin);
-            return response()->json(['error' => 'Origem não permitida.'], 403);
-        }*/
-        return response()->json(['success' => 'tudo ok'], 200);
+        $allowedIps = ['34.193.116.226'];
+        if (!in_array($request->ip(), $allowedIps)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
         return $next($request);
     }

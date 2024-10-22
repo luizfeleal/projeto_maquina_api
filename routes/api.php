@@ -71,7 +71,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
 Route::get('teste', function(){
     return 'cheguei';
 });
-Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial');
+Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial')->middleware('permissionWebhook');
 Route::post('webhook/pagbank', 'App\Http\Controllers\Pagbank\Webhooks\WebhookController@processamentoWebhook');
 
 
