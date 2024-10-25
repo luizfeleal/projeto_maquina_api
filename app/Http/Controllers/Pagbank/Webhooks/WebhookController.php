@@ -29,15 +29,21 @@ class WebhookController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return boolean
      */
-    public function processamentoWebhook(Request $request) :bool
+    public function processamentoWebhook(Request $request): bool
     {
         $dado = $request;
-          
+        
+        \Log::info('req inicial webhook pagabank ------------------');
+        \Log::info($dado);
           $tipoNotificacao = $dado['notificationType'];
           $codigoNotificacao = $dado['notificationCode'];
           if($tipoNotificacao == 'transaction'){
-            $liberarJogada = true;
-            $notificacao = NotificacaoService::coletarDadosNotificacao($codigoNotificacao);
+              $liberarJogada = true;
+              $notificacao = NotificacaoService::coletarDadosNotificacao($codigoNotificacao);
+
+            \Log::info('Notificacao webhook pagabank ------------------');
+            \Log::info($notificacao);
+
 
             $device = MaquinaCartao::where('device', $notificacao['resposta']['device'])->get()->toArray();
             $id_maquina = $device[0]['id_maquina'];
