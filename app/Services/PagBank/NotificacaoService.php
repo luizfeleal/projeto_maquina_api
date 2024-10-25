@@ -46,13 +46,14 @@ class NotificacaoService
                     break;
                 }
 
-                if((count($credenciais) - $index) == 1 && $httpcode !== 200){
+                /*if((count($credenciais) - $index) == 1 && $httpcode !== 200){
                     return "Não funcionou";
-                }
+                }*/
             }
 
 
-            
+            \Log::info('aqui está a notificacao---------');
+            \Log::info($result);
 
 
             $xml = simplexml_load_string($result);
