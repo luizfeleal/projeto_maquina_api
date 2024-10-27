@@ -23,7 +23,7 @@ class MaquinasController extends Controller
     public function index()
     {
         try {
-            $maquinas = Maquinas::all();
+            $maquinas = Maquinas::withTrashed()->get();
 
             return response()->json($maquinas, 200);
         } catch (Exception $e) {
