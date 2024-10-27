@@ -20,10 +20,15 @@ class MaquinasController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $maquinas = Maquinas::withTrashed()->get();
+
+            if($request->has('withTrash')){
+                $maquinas = Maquinas::withTrashed()->get();
+            }else{
+                $maquinas = Maquinas::all();
+            }
 
             return response()->json($maquinas, 200);
         } catch (Exception $e) {
