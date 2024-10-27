@@ -337,6 +337,7 @@ class ExtratoMaquinaController extends Controller
                     'locais.local_nome',
                     'maquinas.data_criacao'
                 )
+                ->where('maquinas.deleted_at', NULL)
                 ->get()
                 ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
     
@@ -385,7 +386,6 @@ class ExtratoMaquinaController extends Controller
     {
         try {
             $id_cliente = $request->input('id_cliente');
-            //return $id_cliente;
             // 1. Recuperar todas as máquinas
             $machines = DB::table('maquinas')
             ->join('locais', 'maquinas.id_local', '=', 'locais.id_local') // Juntando máquinas com locais
@@ -399,6 +399,7 @@ class ExtratoMaquinaController extends Controller
                     'locais.local_nome',
                     'maquinas.data_criacao'
                 )
+                ->where('maquinas.deleted_at', NULL)
                 ->get()
                 ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
     
