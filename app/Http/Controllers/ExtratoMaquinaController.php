@@ -302,10 +302,11 @@ class ExtratoMaquinaController extends Controller
                     DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
                     DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
                 )->where('maquinas.id_local', $idLocal)
+                ->where('maquinas.deleted_at', NULL)
                 ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
     
             // Total de registros para a contagem
-            $totalRecords = DB::table('maquinas')->count();
+            $totalRecords = $query->count();
     
             // Paginar os dados
             $extrato = $query->offset($request->get('start', 0))
