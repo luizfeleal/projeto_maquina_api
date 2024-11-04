@@ -29,7 +29,7 @@ class WebhookController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return boolean
      */
-    public function processamentoWebhook(Request $request): bool
+    public function processamentoWebhook(Request $request)
     {
         $dado = $request;
         
@@ -44,8 +44,17 @@ class WebhookController extends Controller
             \Log::info('Notificacao webhook pagabank ------------------');
             \Log::info($notificacao);
 
+            $device_numero = $notificacao['resposta']['device'];
 
-            $device = MaquinaCartao::where('device', $notificacao['resposta']['device'])->get()->toArray();
+            $device = MaquinaCartao::where('device',$device_numero)->where('status', 1)->get()->toArray();
+            if(empty($device)){
+                Logs::create([
+                    "descricao" => "Erro ao tentar liberar uma jogada, device de número: $device_numero não foi encontrado no sistema.",
+                    "status" => "erro",
+                    "acao" => "liberar jogada",
+                    "id_maquina" => 0
+                ]);
+            }
             $id_maquina = $device[0]['id_maquina'];
 
             $notificacao['resposta']['credito']['id_maquina'] = $id_maquina;
