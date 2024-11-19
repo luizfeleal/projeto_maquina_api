@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Exception;
+use ValidationException;
 
 
 
@@ -47,23 +48,20 @@ class MaquinasController extends Controller
     public function store(Request $request)
     {
         try {
-            \Log::info('Iniciei o registro');
+            
             $dados = $request->all();
             $validator = Validator::make($dados, Maquinas::rules(), Maquinas::feedback());
             
             if ($validator->fails()) {
                 return response()->json(['errors' => $validator->errors()], 400);
             }
-            \Log::info('Passei da validação');
+            
             
             $token = AuthService::coletarToken();
             $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['id_placa']));
-            \Log::info('------Aqui está o retorno de máquina registrada na API HARDWAARE-----');
-            \Log::info($maquinaRegistrada);
             if ($maquinaRegistrada["http_code"] != 200) {
                 return response()->json(['errors' => "Houve um erro ao tentar cadastrar a máquina."], 400);
             }
-            \Log::info('Tentei registrar maquina');
 
             return DB::transaction(function () use ($dados) {
                 $maquinas = new Maquinas();
@@ -72,8 +70,12 @@ class MaquinasController extends Controller
                 return response()->json(['message' => 'Máquina cadastrada com sucesso!', 'response' => $maquinas], 201);
             });
         } catch (ValidationException $e) {
+            MaquinasService::removerMaquina($token, $request['id_placa']);
+            DB::rollBack();
             return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 422);
         } catch (Exception $e) {
+            MaquinasService::removerMaquina($token, $request['id_placa']);
+            DB::rollBack();
             \Log::error($e);
 
             return response()->json(['message' => 'Houve um erro ao tentar cadastrar a máquina.'], 500);
