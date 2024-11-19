@@ -50,6 +50,8 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
     Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
     Route::get('extrato/acumulado','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachine');
+    Route::get('extrato/total/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotal');
+    Route::get('extrato/devolucao/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotalDevolucao');
     Route::get('extrato/acumuladoLocal','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachineFromLocal');
     Route::get('totalMaquinas','App\Http\Controllers\ExtratoMaquinaController@getTheLastTransactionPerMachine');
     Route::post('relatorioTotalTransacoes','App\Http\Controllers\ExtratoMaquinaController@generateReportAllTransactions');
@@ -71,7 +73,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
 Route::get('teste', function(){
     return 'cheguei';
 });
-Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial')->middleware('permissionWebhook');
+Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial');//->middleware('permissionWebhook');
 Route::post('webhook/pagbank', 'App\Http\Controllers\Pagbank\Webhooks\WebhookController@processamentoWebhook');
 
 

@@ -21,6 +21,8 @@ class Maquinas extends Model
         'maquina_nome',
         'maquina_status',
         'maquina_ultimo_contato',
+        'bloqueio_jogada_pagbank',
+        'bloqueio_jogada_efi'
     ];
 
     public static function rules($id = null)

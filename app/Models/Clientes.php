@@ -23,7 +23,9 @@ class Clientes extends Model
         "cliente_uf",
         "cliente_cep",
         "cliente_numero",
-        "cliente_complemento"
+        "cliente_complemento",
+        "checkbox_efi",
+        "checkbox_pagbank"
     ];
      public static function rules($id = null)
      {

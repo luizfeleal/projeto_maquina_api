@@ -69,6 +69,17 @@ class WebhookController extends Controller
                     "id_maquina" => $id_maquina
                 ]);
             }
+
+            if($device[0]['bloqueio_jogada_pagbank'] == 1){
+                $liberarJogada = false;
+                Logs::create([
+                    "descricao" => "Erro ao tentar liberar jogadas! A máquina de cartão se encontra como bloqueada para liberar jogadas por maquininha de cartão.",
+                    "status" => "erro",
+                    "acao" => "liberar jogada",
+                    "id_maquina" => $id_maquina
+                ]);
+
+            }
             $tentativas = 0;
             $maxTentativas = env('TENTATIVAS_PERSISTENCIA_JOGADA');
             $resposta = null;

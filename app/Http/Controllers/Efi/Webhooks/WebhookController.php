@@ -39,6 +39,8 @@ class WebhookController extends Controller
         \Log::info($request);
         try {
 
+            $maquina_bloqueada = false;
+
             DB::beginTransaction();
             if ($request['evento'] && $request['evento'] == "teste_webhook") {
                 return response()->json(['message' => "URL OK"], 200);
@@ -68,6 +70,16 @@ class WebhookController extends Controller
             $id_placa = $id_placa_result[0]->id_placa;
             $id_maquina = $id_placa_result[0]->id_maquina;
 
+            if($id_placa_result[0]->bloqueio_jogada_efi == 1){
+                $maquina_bloqueada = true;
+                Logs::create([
+                    "descricao" => "Erro ao tentar liberar jogada. A máquina possui um bloqueio de liberação de jogadas por pix: [id_placa: $id_placa]",
+                    "status" => "erro",
+                    "acao" => "Liberar jogada",
+                    "id_maquina" => $id_maquina
+                ]);
+            }
+
             $cliente_local = ClienteLocal::where('id_local', $id_placa_result[0]->id_local)->where('cliente_local_principal', 1)->get()->toArray();
 
             $id_cliente = $cliente_local[0]['id_cliente'];
@@ -86,6 +98,11 @@ class WebhookController extends Controller
             $gerarDevolucao = false;
 
             do {
+
+                if($maquina_bloqueada == true){
+                    $gerarDevolucao = true;
+                    break;
+                }
 
                 $token = AuthService::coletarToken();
                 $resposta = JogadasService::liberarJogada($id_placa, $valor, substr($idE2E, 0, 6), $token);
@@ -137,7 +154,6 @@ class WebhookController extends Controller
 
             $extrato = ExtratoMaquina::insert($dadosExtrato);
 
-            $gerarDevolucao == true;
             if ($gerarDevolucao == true) {
                 $id_cliente = $request['id_cliente'];
                 $cred_api_pix = $cliente_credencial[0];

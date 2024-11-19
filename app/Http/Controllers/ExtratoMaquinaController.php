@@ -848,4 +848,61 @@ class ExtratoMaquinaController extends Controller
             return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
         }
     }
+
+    public function getTotal($id = null) {
+        $query = DB::table('maquinas')
+            ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
+            ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->leftJoin('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
+            ->select(DB::raw('
+                COALESCE(SUM(
+                    CASE 
+                        WHEN extrato_maquina.extrato_operacao = "C" THEN extrato_maquina.extrato_operacao_valor
+                        WHEN extrato_maquina.extrato_operacao = "D" THEN -extrato_maquina.extrato_operacao_valor
+                        ELSE 0
+                    END
+                ), 0) as saldo_final
+            '));
+    
+        // Aplica o filtro por cliente, se o $id for fornecido
+        if (!is_null($id)) {
+            $query->where('cliente_local.id_cliente', $id);
+        }
+    
+        // Retorna o valor final diretamente
+        $result = $query->first();
+    
+        return response()->json(["data" => $result->saldo_final], 200);
+    }
+    
+    public function getTotalDevolucao($id = null) {
+        $dataHoje = date('Y-m-d');
+        $mesAtual = date('Y-m');
+        $mesPassado = date('Y-m', strtotime('first day of last month'));
+    
+        // Define a base da consulta
+        $query = DB::table('maquinas')
+            ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
+            ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->leftJoin('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
+            ->where('extrato_maquina.extrato_operacao_tipo', 'Estorno');  // Condição para "Estorno"
+    
+        // Aplica o filtro por cliente, se o $id for fornecido
+        if (!is_null($id)) {
+            $query->where('cliente_local.id_cliente', $id);
+        }
+    
+        // Calcula a soma para cada período
+        $result = [
+            'hoje' => (clone $query)->whereDate('extrato_maquina.data_criacao', $dataHoje)->sum('extrato_maquina.extrato_operacao_valor'),
+            'mes_atual' => (clone $query)->where('extrato_maquina.data_criacao', '>=', $mesAtual . '-01')
+                                         ->where('extrato_maquina.data_criacao', '<=', $mesAtual . '-31')
+                                         ->sum('extrato_maquina.extrato_operacao_valor'),
+            'mes_passado' => (clone $query)->where('extrato_maquina.data_criacao', '>=', $mesPassado . '-01')
+                                           ->where('extrato_maquina.data_criacao', '<=', $mesPassado . '-31')
+                                           ->sum('extrato_maquina.extrato_operacao_valor'),
+        ];
+    
+        return response()->json($result, 200);
+    }
 }
