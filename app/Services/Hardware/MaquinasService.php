@@ -69,6 +69,8 @@ class MaquinasService
                     CURLOPT_CUSTOMREQUEST => 'POST',
                     CURLOPT_POSTFIELDS => $data_string,
                     CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => 10, // Tempo máximo para a execução (em segundos)
+                    CURLOPT_CONNECTTIMEOUT => 10, // Tempo máximo para estabelecer a conexão (em segundos)
                     CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token],
                 )
             );
