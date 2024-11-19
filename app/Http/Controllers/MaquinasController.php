@@ -47,20 +47,23 @@ class MaquinasController extends Controller
     public function store(Request $request)
     {
         try {
+            \Log::info('Iniciei o registro');
             $dados = $request->all();
             $validator = Validator::make($dados, Maquinas::rules(), Maquinas::feedback());
-            //$validatedData = $request->validate((new Usuarios)->rules(), (new Usuarios)->feedback());
-
+            
             if ($validator->fails()) {
                 return response()->json(['errors' => $validator->errors()], 400);
             }
-
+            \Log::info('Passei da validação');
+            
             $token = AuthService::coletarToken();
-            //return array($request['id_placa']);
             $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['id_placa']));
+            \Log::info('------Aqui está o retorno de máquina registrada na API HARDWAARE-----');
+            \Log::info($maquinaRegistrada);
             if ($maquinaRegistrada["http_code"] != 200) {
                 return response()->json(['errors' => "Houve um erro ao tentar cadastrar a máquina."], 400);
             }
+            \Log::info('Tentei registrar maquina');
 
             return DB::transaction(function () use ($dados) {
                 $maquinas = new Maquinas();
