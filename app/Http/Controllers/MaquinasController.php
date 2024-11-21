@@ -122,12 +122,13 @@ class MaquinasController extends Controller
                 $maquina->fill($dados);
                 $maquina->save();
 
-                return response()->json(['message' => 'Cliente atualizado com sucesso!', 'response' => $maquina], 200);
+                return response()->json(['message' => 'Máquina atualizada com sucesso!', 'response' => $maquina], 200);
             });
         } catch (\Exception $e) {
+            \Log::info("----------------------Erro ao tentar atualizar máquina--------------------");
             \Log::error($e);
 
-            return response()->json(["message" => "Houve um erro ao tentar atualizar o cliente de id: $id.", "error" => $e->getMessage()], 500);
+            return response()->json(["message" => "Houve um erro ao tentar atualizar a máquina de id: $id.", "error" => $e->getMessage()], 500);
         }
     }
 
