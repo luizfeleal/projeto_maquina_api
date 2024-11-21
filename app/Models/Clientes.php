@@ -15,15 +15,7 @@ class Clientes extends Model
         "cliente_nome",
         "cliente_celular",
         "cliente_email",
-        "cliente_data_nascimento",
         "cliente_cpf_cnpj",
-        "cliente_logradouro",
-        "cliente_bairro",
-        "cliente_cidade",
-        "cliente_uf",
-        "cliente_cep",
-        "cliente_numero",
-        "cliente_complemento",
         "checkbox_efi",
         "checkbox_pagbank"
     ];
