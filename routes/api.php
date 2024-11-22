@@ -42,6 +42,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('logs','App\Http\Controllers\LogsController');
     Route::apiResource('clientes','App\Http\Controllers\ClientesController');
     Route::apiResource('maquinas','App\Http\Controllers\MaquinasController');
+    Route::post('maquinas/atualizar','App\Http\Controllers\MaquinasController@update');
     Route::apiResource('maquinasCartao','App\Http\Controllers\MaquinasCartaoController');
     Route::post('maquinasCartaoAtualizar','App\Http\Controllers\MaquinasCartaoController@inactive');
     Route::apiResource('clienteLocal','App\Http\Controllers\ClienteLocalController');
