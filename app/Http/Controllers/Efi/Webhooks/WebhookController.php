@@ -99,7 +99,6 @@ class WebhookController extends Controller
                     \Log::error("------------------------------------");
                 } else if($webhook['pix'][0]['status'] == "EM_PROCESSAMENTO") {
                     return;
-                    
                 }
                 return;
             }

@@ -70,6 +70,7 @@ class WebhookController extends Controller
                 ]);
             }
 
+            return $device;
             if($device[0]['bloqueio_jogada_pagbank'] == 1){
                 $liberarJogada = false;
                 Logs::create([
