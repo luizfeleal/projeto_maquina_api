@@ -60,7 +60,6 @@ class WebhookController extends Controller
             $notificacao['resposta']['credito']['id_maquina'] = $id_maquina;
             $notificacao['resposta']['debito']['id_maquina'] = $id_maquina;
 
-            return $device;
             if($device[0]['status'] != 1){
                 $liberarJogada = false;
                 Logs::create([
@@ -72,6 +71,7 @@ class WebhookController extends Controller
                 return;
             }
             
+            $maquina = Maquinas::where('id_maquina', $id_maquina)->get();
             if(!empty($maquina) && $maquina[0]['bloqueio_jogada_pagbank'] == 1){
                 return 'cheguei aqui';
                 $liberarJogada = false;
