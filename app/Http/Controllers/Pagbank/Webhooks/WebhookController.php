@@ -70,6 +70,7 @@ class WebhookController extends Controller
                 ]);
             }
 
+            return $id_maquina;
             $maquina = Maquinas::where('id_maquina', $id_maquina)->get();
             return $maquina;
             if(!empty($maquina) && $maquina[0]['bloqueio_jogada_pagbank'] == 1){
