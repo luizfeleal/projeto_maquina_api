@@ -116,7 +116,6 @@ class MaquinasController extends Controller
 
             $dados = $request->all();
 
-            return $id;
             return DB::transaction(function () use ($dados, $id) {
                 $maquina = Maquinas::findOrFail($id);
 
