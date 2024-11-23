@@ -85,7 +85,7 @@ class GetTransactionsMachine extends Command
         }
 
         MaquinasService::limparTransaçõesMaquinaAposColeta($token);
-        $this->info('Active machines checked successfully.');
+        $this->info('Transactions checked successfully.');
         return Command::SUCCESS;
     }
 }
