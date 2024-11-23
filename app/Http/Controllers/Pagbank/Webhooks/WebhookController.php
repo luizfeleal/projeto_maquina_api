@@ -60,6 +60,7 @@ class WebhookController extends Controller
             $notificacao['resposta']['credito']['id_maquina'] = $id_maquina;
             $notificacao['resposta']['debito']['id_maquina'] = $id_maquina;
 
+            return $device;
             if($device[0]['status'] != 1){
                 $liberarJogada = false;
                 Logs::create([
