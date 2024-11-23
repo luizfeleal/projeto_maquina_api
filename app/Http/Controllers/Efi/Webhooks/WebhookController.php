@@ -49,9 +49,7 @@ class WebhookController extends Controller
             
             $webhook = $request;
 
-            if (isset($webhook['pix'][0]['devolucoes']) && !empty($webhook['pix'][0]['devolucoes'])) {
-                return;
-            }
+            
             $idE2E = $webhook['pix'][0]['endToEndId'];
 
             $txid = $webhook['pix'][0]['txid'];
@@ -84,6 +82,28 @@ class WebhookController extends Controller
 
             $id_cliente = $cliente_local[0]['id_cliente'];
             $cliente_credencial = CredApiPix::where('id_cliente', $id_cliente)->get()->toArray();
+
+            if (isset($webhook['pix'][0]['devolucoes']) && !empty($webhook['pix'][0]['devolucoes'])) {
+                if ($webhook['pix'][0]['status'] == "DEVOLVIDO") {
+                    $dadosExtrato = [
+                        [
+                            "id_maquina" => $id_maquina,
+                            "id_end_to_end" => $idE2E,
+                            "extrato_operacao" => "D",
+                            "extrato_operacao_tipo" => "Estorno",
+                            "extrato_operacao_valor" => $valor,
+                            "extrato_operacao_status" => 1,
+                        ]
+                    ];
+                    $extrato = ExtratoMaquina::insert($dadosExtrato);
+                    \Log::error("Cadastro devolucao no extrato ---------------------");
+                    \Log::error($extrato);
+                    \Log::error("------------------------------------");
+                } else if($webhook['pix'][0]['status'] == "EM_PROCESSAMENTO") {
+                    return;
+                }
+                return;
+            }
 
 
             //Tentar liberar jogada
@@ -167,31 +187,7 @@ class WebhookController extends Controller
                 \Log::info($devolucao);
 
                 //return isset($result['status']) && $result['status'] == "EM_PROCESSAMENTO";
-                if (isset($result['status']) && $result['status'] == "EM_PROCESSAMENTO") {
-                    $dadosExtrato = [
-                        [
-                            "id_maquina" => $id_maquina,
-                            "id_end_to_end" => $idE2E,
-                            "extrato_operacao" => "D",
-                            "extrato_operacao_tipo" => "Estorno",
-                            "extrato_operacao_valor" => $valor,
-                            "extrato_operacao_status" => 1,
-                        ]
-                    ];
-                    $extrato = ExtratoMaquina::insert($dadosExtrato);
-                    \Log::error("Cadastro devolucao no extrato ---------------------");
-                    \Log::error($extrato);
-                    \Log::error("------------------------------------");
-                } else {
-
-                    Logs::create([
-                        "descricao" => "Erro ao tentar efetuar a devolução do PIX.",
-                        "status" => "erro",
-                        "acao" => "Devolução Pix",
-                        "id_maquina" => $id_maquina
-                    ]);
-                    \Log::error($devolucao);
-                }
+                
             }
             //retornar codigo 200
 
