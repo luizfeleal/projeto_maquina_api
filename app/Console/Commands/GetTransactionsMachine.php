@@ -57,7 +57,7 @@ class GetTransactionsMachine extends Command
                             // Adicione os dados no array de inserções
                             $insercoes[] = [
                                 "id_maquina" => $id_maquina,
-                                "id_end_to_end" => $machineData->transaction_id != null ? $machineData->transaction_id  : rand(10000000, 99999999),
+                                "id_end_to_end" => $machineData->transactionId != null ? $machineData->transactionId  : rand(10000000, 99999999),
                                 "extrato_operacao" => "C",
                                 "extrato_operacao_tipo" => "Dinheiro",
                                 "extrato_operacao_valor" => $machineData->credits,
