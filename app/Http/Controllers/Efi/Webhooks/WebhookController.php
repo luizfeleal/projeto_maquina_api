@@ -84,7 +84,7 @@ class WebhookController extends Controller
             $cliente_credencial = CredApiPix::where('id_cliente', $id_cliente)->get()->toArray();
 
             if (isset($webhook['pix'][0]['devolucoes']) && !empty($webhook['pix'][0]['devolucoes'])) {
-                if ($webhook['pix'][0]['status'] == "DEVOLVIDO") {
+                if ($webhook['pix'][0]['devolucoes'][0]['status'] == "DEVOLVIDO") {
                     $dadosExtrato = [
                         [
                             "id_maquina" => $id_maquina,
