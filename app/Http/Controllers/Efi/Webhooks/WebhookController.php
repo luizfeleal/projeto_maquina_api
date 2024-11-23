@@ -96,6 +96,7 @@ class WebhookController extends Controller
                         ]
                     ];
                     $extrato = ExtratoMaquina::insert($dadosExtrato);
+                    return $extrato;
                     \Log::error("Cadastro devolucao no extrato ---------------------");
                     \Log::error($extrato);
                     \Log::error("------------------------------------");
