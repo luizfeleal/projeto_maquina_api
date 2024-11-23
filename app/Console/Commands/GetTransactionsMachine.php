@@ -46,6 +46,8 @@ class GetTransactionsMachine extends Command
                 $insercoes = []; // Array para armazenar os dados que serão inseridos em massa
                 
                 foreach ($transacoes as $machineData) {
+                \Log::info('machine data coletando informações ---------------');
+                    \Log::info($machineData);
                     $id_placa = $machineData->deviceId;
                     $transacoes_maquina = $machineData->transactions;
                     
