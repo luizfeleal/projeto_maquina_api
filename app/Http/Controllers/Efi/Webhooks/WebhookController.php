@@ -163,8 +163,8 @@ class WebhookController extends Controller
                 $id_transacao = ExtratoMaquina::where('id_maquina', $id_maquina)->where('id_end_to_end', $idE2E)->get()->toArray()[0]['id_extrato_maquina'];
                 $devolucao = GestaoPixService::solicitarDevolucao($token, $idE2E, $id_transacao, $valor, $dadoCredDescriptografado['caminho_certificado']);
 
-                \Logs::info('----------- Devolução do PIX -------------');
-                \Logs::info($devolucao);
+                \Log::info('----------- Devolução do PIX -------------');
+                \Log::info($devolucao);
 
                 //return isset($result['status']) && $result['status'] == "EM_PROCESSAMENTO";
                 if (isset($result['status']) && $result['status'] == "EM_PROCESSAMENTO") {
