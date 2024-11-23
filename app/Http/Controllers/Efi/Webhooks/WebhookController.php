@@ -55,7 +55,7 @@ class WebhookController extends Controller
             $idE2E = $webhook['pix'][0]['endToEndId'];
 
             $txid = $webhook['pix'][0]['txid'];
-            $valor = intval($webhook['pix'][0]['valor']);
+            $valor = floatval($webhook['pix'][0]['valor']);
             $tarifa = 0;
             if (isset($webhook['pix'][0]['gnExtras']['tarifa'])) {
                 $tarifa = $webhook['pix'][0]['gnExtras']['tarifa'];
@@ -163,6 +163,9 @@ class WebhookController extends Controller
                 $id_transacao = ExtratoMaquina::where('id_maquina', $id_maquina)->where('id_end_to_end', $idE2E)->get()->toArray()[0]['id_extrato_maquina'];
                 $devolucao = GestaoPixService::solicitarDevolucao($token, $idE2E, $id_transacao, $valor, $dadoCredDescriptografado['caminho_certificado']);
 
+                \Logs::info('----------- Devolução do PIX -------------');
+                \Logs::info($devolucao);
+
                 //return isset($result['status']) && $result['status'] == "EM_PROCESSAMENTO";
                 if (isset($result['status']) && $result['status'] == "EM_PROCESSAMENTO") {
                     $dadosExtrato = [
@@ -182,7 +185,7 @@ class WebhookController extends Controller
                 } else {
 
                     Logs::create([
-                        "descricao" => "Erro ao tentar efetuar a devolução do PIX. Informações: [id_maquina: $id_maquina]",
+                        "descricao" => "Erro ao tentar efetuar a devolução do PIX.",
                         "status" => "erro",
                         "acao" => "Devolução Pix",
                         "id_maquina" => $id_maquina
