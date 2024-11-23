@@ -68,11 +68,9 @@ class WebhookController extends Controller
                     "acao" => "liberar jogada",
                     "id_maquina" => $id_maquina
                 ]);
+                return;
             }
-
-            return $id_maquina;
-            $maquina = Maquinas::where('id_maquina', $id_maquina)->get();
-            return $maquina;
+            
             if(!empty($maquina) && $maquina[0]['bloqueio_jogada_pagbank'] == 1){
                 $liberarJogada = false;
                 Logs::create([
@@ -81,9 +79,7 @@ class WebhookController extends Controller
                     "acao" => "liberar jogada",
                     "id_maquina" => $id_maquina
                 ]);
-
                 return;
-
             }
             $tentativas = 0;
             $maxTentativas = env('TENTATIVAS_PERSISTENCIA_JOGADA');
