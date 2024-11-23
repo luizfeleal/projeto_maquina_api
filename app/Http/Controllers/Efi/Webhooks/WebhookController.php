@@ -85,7 +85,7 @@ class WebhookController extends Controller
 
             if (isset($webhook['pix'][0]['devolucoes']) && !empty($webhook['pix'][0]['devolucoes'])) {
                 if ($webhook['pix'][0]['devolucoes'][0]['status'] == "DEVOLVIDO") {
-                    ExtratoMaquina::create([
+                    $extrato = ExtratoMaquina::create([
                         'id_maquina' => $id_maquina,
                         'id_end_to_end' => $idE2E,
                         'extrato_operacao' => 'D',
