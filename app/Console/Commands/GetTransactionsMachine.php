@@ -47,7 +47,7 @@ class GetTransactionsMachine extends Command
                 
                 foreach ($transacoes as $machineData) {
                 \Log::info('machine data coletando informações ---------------');
-                    \Log::info($machineData);
+                    \Log::info(json_encode($machineData));
                     $id_placa = $machineData->deviceId;
                     $transacoes_maquina = $machineData->transactions;
                     
