@@ -85,18 +85,14 @@ class WebhookController extends Controller
 
             if (isset($webhook['pix'][0]['devolucoes']) && !empty($webhook['pix'][0]['devolucoes'])) {
                 if ($webhook['pix'][0]['devolucoes'][0]['status'] == "DEVOLVIDO") {
-                    $dadosExtrato = [
-                        [
-                            "id_maquina" => $id_maquina,
-                            "id_end_to_end" => $idE2E,
-                            "extrato_operacao" => "D",
-                            "extrato_operacao_tipo" => "Estorno",
-                            "extrato_operacao_valor" => $valor,
-                            "extrato_operacao_status" => 1,
-                        ]
-                    ];
-                    $extrato = ExtratoMaquina::insert($dadosExtrato);
-                    return $extrato;
+                    return ExtratoMaquina::create([
+                        'id_maquina' => $id_maquina,
+                        'id_end_to_end' => $idE2E,
+                        'extrato_operacao' => 'D',
+                        'extrato_operacao_tipo' => 'Estorno',
+                        'extrato_operacao_valor' => $valor,
+                        'extrato_operacao_status' => 1,
+                    ]);
                     \Log::error("Cadastro devolucao no extrato ---------------------");
                     \Log::error($extrato);
                     \Log::error("------------------------------------");
