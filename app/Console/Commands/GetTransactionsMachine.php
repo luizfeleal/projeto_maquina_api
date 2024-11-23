@@ -46,25 +46,23 @@ class GetTransactionsMachine extends Command
                 $insercoes = []; // Array para armazenar os dados que serão inseridos em massa
                 
                 foreach ($transacoes as $machineData) {
-                \Log::info('machine data coletando informações ---------------');
+                \Log::info('------------------ Valores em moedeiro hardware ---------------');
                     \Log::info(json_encode(json_encode($machineData)));
                     $id_placa = $machineData->deviceId;
-                    $transacoes_maquina = $machineData->transactions;
                     
                     if($maquinas->has($id_placa)){
                         
                         $id_maquina = $maquinas[$id_placa]['id_maquina'];
-                        foreach ($transacoes_maquina as $transacao) {
+                        
                             // Adicione os dados no array de inserções
                             $insercoes[] = [
                                 "id_maquina" => $id_maquina,
-                                "id_end_to_end" => $transacao->transaction_id != null ? $transacao->transaction_id  : rand(10000000, 99999999),
+                                "id_end_to_end" => $machineData->transaction_id != null ? $machineData->transaction_id  : rand(10000000, 99999999),
                                 "extrato_operacao" => "C",
                                 "extrato_operacao_tipo" => "Dinheiro",
-                                "extrato_operacao_valor" => $transacao->credits,
+                                "extrato_operacao_valor" => $machineData->credits,
                                 "extrato_operacao_status" => 1
                             ];
-                        }
                     }else{
                         continue;
                     }
@@ -72,8 +70,6 @@ class GetTransactionsMachine extends Command
                 
                 // Execute a inserção em massa
                 $extratoMaquina = ExtratoMaquina::insert($insercoes);
-                \Log::info($insercoes);
-                \Log::info($extratoMaquina);
                 
                 // Confirma a transação
                 DB::commit();
