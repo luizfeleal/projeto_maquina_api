@@ -569,7 +569,8 @@ class ExtratoMaquinaController extends Controller
             $totalRecords = $query->count();
         
             // Paginar os dados
-            $extrato = $query->offset($request->get('start', 0))
+            $extrato = $query->orderBy('extrato_maquina.data_criacao', 'desc')
+                             ->offset($request->get('start', 0))
                              ->limit($perPage)
                              ->get();
         
