@@ -515,7 +515,7 @@ class ExtratoMaquinaController extends Controller
             // Pegando os parâmetros de filtro
             $clientes = $request->input('id_cliente', []); // array de IDs de clientes
             $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
-            $locais = $request->input('id_local', []); // array de IDs de locais
+            //$locais = $request->input('id_local', []); // array de IDs de locais
             $tipoTransacao = $request->input('tipo_transacao');
             $dataInicio = $request->input('data_inicio');
             $dataFim = $request->input('data_fim');
@@ -526,7 +526,7 @@ class ExtratoMaquinaController extends Controller
                 ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
                 ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
                 ->select(
-                    'locais.local_nome',
+                    //'locais.local_nome',
                     'cliente_local.id_cliente',
                     'maquinas.maquina_nome',
                     'extrato_maquina.extrato_operacao',
@@ -546,9 +546,9 @@ class ExtratoMaquinaController extends Controller
             }
         
             // Aplicando filtros para locais (se múltiplos IDs foram passados)
-            if (!empty($locais)) {
+            /*if (!empty($locais)) {
                 $query->whereIn('locais.id_local', $locais);
-            }
+            }*/
         
             // Aplicando filtro de tipo de transação
             if ($tipoTransacao) {
