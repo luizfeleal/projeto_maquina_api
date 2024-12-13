@@ -316,8 +316,8 @@ class ExtratoMaquinaController extends Controller
             // Responder no formato esperado pelo DataTables
             return response()->json([
                 'data' => $extrato,
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $totalRecords
+                'recordsTotal' => count($extrato),
+                'recordsFiltered' => count($extrato)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
