@@ -59,7 +59,7 @@ class WebhookController extends Controller
                 $tarifa = $webhook['pix'][0]['gnExtras']['tarifa'];
             }
 
-            $id_placa_ultimos_quatro_digitos = intval(substr($txid, -4));
+            $id_placa_ultimos_quatro_digitos = substr($txid, -4);
 
             \Log::info('------id_ultimos_quatro_extraído----');
             \Log::info( $id_placa_ultimos_quatro_digitos);
