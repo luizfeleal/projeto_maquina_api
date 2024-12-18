@@ -58,6 +58,12 @@ class MaquinasController extends Controller
             
             
             $token = AuthService::coletarToken();
+
+            $maquinas = Maquinas::where('id_placa', $request['id_placa'])->where('deleted_at', null)->get();
+
+            if(!empty($maquinas)){
+                return response()->json(['errors' => "Já existe uma máquina registrada para esse ID de placa. Caso queira registrar novamente, remova a placa existente."], 400);
+            }
             $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['id_placa']));
             if ($maquinaRegistrada["http_code"] != 200) {
                 return response()->json(['errors' => "Houve um erro ao tentar cadastrar a máquina."], 400);
