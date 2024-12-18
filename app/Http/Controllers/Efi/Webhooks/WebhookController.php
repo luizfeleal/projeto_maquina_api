@@ -61,6 +61,9 @@ class WebhookController extends Controller
 
             $id_placa_ultimos_quatro_digitos = intval(substr($txid, -4));
 
+            \Log::info('------id_ultimos_quatro_extraído----');
+            \Log::info( $id_placa_ultimos_quatro_digitos);
+
             $id_placa_result = DB::table('maquinas')
                 ->whereRaw('RIGHT(id_placa, 4) = ?', [$id_placa_ultimos_quatro_digitos])->where('deleted_at', NULL)
                 ->get()->toArray();
