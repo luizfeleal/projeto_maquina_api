@@ -171,15 +171,18 @@ class QrCodeService
 
     public static function criarTxidComIdPlaca($id_placa)
     {
-        // Certifique-se de que o ID tenha exatamente 6 dígitos
+        // Certifique-se de que o ID da placa seja válido (apenas alfanumérico e no tamanho adequado)
+        $id_placa = substr(preg_replace('/[^A-Za-z0-9]/', '', $id_placa), 0, 12); // Limitar o id_placa a 12 caracteres
 
-        // Gere um prefixo único, por exemplo, usando timestamp ou outra lógica
-        $prefixo = uniqid();
+        // Cria um prefixo único (timestamp curto + hash curto)
+        $timestamp = substr(time(), -5); // Últimos 5 dígitos do timestamp
+        $hash = substr(hash('sha256', uniqid($id_placa, true)), 0, 7); // Primeiro 7 caracteres do hash
 
-        // Combine o prefixo com o ID para formar o txid
-        $txid = $prefixo . $id_placa;
+        // Combine os elementos para formar o txid
+        $txid = $timestamp . $hash . $id_placa;
 
-        return $txid;
+        // Garante que não ultrapasse 24 caracteres
+        return substr($txid, 0, 24);
     }
 
 

@@ -110,7 +110,7 @@ class QrController extends Controller
             #RESGATAR ID PLACA DA MÁQUINA ESCOLHIDA
             $maquina = Maquinas::find($id_maquina);
             
-            $id_placa = substr($maquina['id_placa'], -4);
+            $id_placa = $maquina['id_placa'];
             #GERAR TXID
             $txid = (new QrCodeService)->criarTxidComIdPlaca($id_placa);
 
