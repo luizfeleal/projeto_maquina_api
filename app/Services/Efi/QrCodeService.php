@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services\Efi;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\QrCode;
@@ -77,17 +78,20 @@ class QrCodeService
         return $this;
     }
 
-    public function setNomeTitularConta($nomeTitularConta){
+    public function setNomeTitularConta($nomeTitularConta)
+    {
         $this->nomeTitularConta = (string)$nomeTitularConta;
         return $this;
     }
 
-    public function setNomeCidadeTitularConta($nomeCidadeTitularConta){
+    public function setNomeCidadeTitularConta($nomeCidadeTitularConta)
+    {
         $this->nomeCidadeTitularConta = (string)$nomeCidadeTitularConta;
         return $this;
     }
 
-    public function setTxid($txid){
+    public function setTxid($txid)
+    {
         $this->txid = (string)$txid;
         return $this;
     }
@@ -97,7 +101,8 @@ class QrCodeService
      * @param float $valorTransacao
      */
 
-    public function setValorTransacao($valorTransacao){
+    public function setValorTransacao($valorTransacao)
+    {
         $this->valorTransacao = (string)number_format($valorTransacao, 2, '.', '');
         return $this;
     }
@@ -106,7 +111,7 @@ class QrCodeService
     {
         $tamanho = str_pad(strlen($valor), 2, '0', STR_PAD_LEFT);
 
-        return $id.$tamanho.$valor;
+        return $id . $tamanho . $valor;
     }
 
     private function getCampoAdicionalTemplate()
@@ -116,14 +121,15 @@ class QrCodeService
         return $this->getValor(self::ID_ADDITIONAL_DATA_FIELD_TEMPLATE, $txid);
     }
 
-    private function getCRC16($payload) {
+    private function getCRC16($payload)
+    {
         //ADICIONA DADOS GERAIS NO PAYLOAD
-        $payload .= self::ID_CRC16.'04';
-  
+        $payload .= self::ID_CRC16 . '04';
+
         //DADOS DEFINIDOS PELO BACEN
         $polinomio = 0x1021;
         $resultado = 0xFFFF;
-  
+
         //CHECKSUM
         if (($length = strlen($payload)) > 0) {
             for ($offset = 0; $offset < $length; $offset++) {
@@ -134,9 +140,9 @@ class QrCodeService
                 }
             }
         }
-  
+
         //RETORNA CÓDIGO CRC16 DE 4 CARACTERES
-        return self::ID_CRC16.'04'.strtoupper(dechex($resultado));
+        return self::ID_CRC16 . '04' . strtoupper(dechex($resultado));
     }
 
     public function getInformacaoTitularConta()
@@ -147,41 +153,41 @@ class QrCodeService
 
         $descricao = strlen($this->descricao) ? $this->getValor(self::ID_MERCHANT_ACCOUNT_INFORMATION_DESCRIPTION, $this->descricao) : '';
 
-        return $this->getValor(self::ID_MERCHANT_ACCOUNT_INFORMATION, $gui.$chave.$descricao);
+        return $this->getValor(self::ID_MERCHANT_ACCOUNT_INFORMATION, $gui . $chave . $descricao);
     }
 
 
     public function getPayload()
     {
-        $payload = $this->getValor(self::ID_PAYLOAD_FORMAT_INDICATOR, '01').
-                   $this->getInformacaoTitularConta().
-                   $this->getValor(self::ID_MERCHANT_CATEGORY_CODE, '0000').
-                   $this->getValor(self::ID_TRANSACTION_CURRENCY, '986').
-                   $this->getValor(self::ID_TRANSACTION_AMOUNT, $this->valorTransacao).
-                   $this->getValor(self::ID_COUNTRY_CODE, 'BR').
-                   $this->getValor(self::ID_MERCHANT_NAME, $this->nomeTitularConta).
-                   $this->getValor(self::ID_MERCHANT_CITY, $this->nomeCidadeTitularConta).
-                   $this->getCampoAdicionalTemplate();
+        $payload = $this->getValor(self::ID_PAYLOAD_FORMAT_INDICATOR, '01') .
+            $this->getInformacaoTitularConta() .
+            $this->getValor(self::ID_MERCHANT_CATEGORY_CODE, '0000') .
+            $this->getValor(self::ID_TRANSACTION_CURRENCY, '986') .
+            $this->getValor(self::ID_TRANSACTION_AMOUNT, $this->valorTransacao) .
+            $this->getValor(self::ID_COUNTRY_CODE, 'BR') .
+            $this->getValor(self::ID_MERCHANT_NAME, $this->nomeTitularConta) .
+            $this->getValor(self::ID_MERCHANT_CITY, $this->nomeCidadeTitularConta) .
+            $this->getCampoAdicionalTemplate();
 
         //RETORNA PAYLOAD + CRC16
-        return $payload.$this->getCRC16($payload);
+        return $payload . $this->getCRC16($payload);
     }
 
-    
+
 
     public static function criarTxidComIdPlaca($id_placa)
     {
         // Certifique-se de que o ID da placa seja válido (apenas alfanumérico e no tamanho adequado)
-        $id_placa = substr(preg_replace('/[^A-Za-z0-9]/', '', $id_placa), 0, 12); // Limitar o id_placa a 12 caracteres
+        $id_placa = substr(preg_replace('/[^A-Za-z0-9]/', '', $id_placa), 0, 18); // Limitar o id_placa a 18 caracteres
 
-        // Cria um prefixo único (timestamp curto + hash curto)
-        $timestamp = substr(time(), -5); // Últimos 5 dígitos do timestamp
-        $hash = substr(hash('sha256', uniqid($id_placa, true)), 0, 7); // Primeiro 7 caracteres do hash
+        // Cria um sufixo único (parte do timestamp + hash curto)
+        $timestamp = substr(time(), -3); // Últimos 3 dígitos do timestamp
+        $hash = substr(hash('sha256', uniqid($id_placa, true)), 0, 3); // Primeiro 3 caracteres do hash
 
         // Combine os elementos para formar o txid
-        $txid = $timestamp . $hash . $id_placa;
+        $txid = $id_placa . $timestamp . $hash;
 
-        // Garante que não ultrapasse 24 caracteres
+        // Garante que o txid tenha no máximo 24 caracteres
         return substr($txid, 0, 24);
     }
 
@@ -225,13 +231,12 @@ class QrCodeService
 
         if (curl_errno($ch)) {
             throw new \Exception("Erro durante a requisição cURL: " . curl_error($ch));
-          }
+        }
         curl_close($ch);
-    
+
         $resposta = json_decode($result);
 
         return $resposta;
-        
     }
 
     public static function mudarDataExpiracaoQr(int $idLocation, string $token)
@@ -273,19 +278,18 @@ class QrCodeService
 
         if (curl_errno($ch)) {
             throw new \Exception("Erro durante a requisição cURL: " . curl_error($ch));
-          }
+        }
         curl_close($ch);
-    
+
         $resposta = json_decode($result);
 
         return $resposta;
-        
     }
 
 
-    public static function setarEstruturaWebhook($chaveAleatoria){
+    public static function setarEstruturaWebhook($chaveAleatoria)
+    {
         $estrutura = array('pix' => array('receberSemChave' => true, 'chaves' => array($chaveAleatoria => array('recebimento' => array('txidObrigatorio' => false, 'qrCodeEstatico' => array('recusarTodos' => false), 'webhook' => array('notificacao' => array('tarifa' => true, 'pagador' => true), 'notificar' => array('pixSemTxid' => true)))))));
         return $estrutura;
     }
-
 }
