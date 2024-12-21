@@ -257,7 +257,7 @@ class ExtratoMaquinaController extends Controller
         return response()->json([
             'data' => $extrato,
             'recordsTotal' => count($extrato), // Total de registros sem filtro
-            'recordsFiltered' => $totalFiltered // Total de registros após o filtro
+            'recordsFiltered' => count($extrato) // Total de registros após o filtro
         ], 200);
     } catch (Exception $e) {
         return response()->json([
