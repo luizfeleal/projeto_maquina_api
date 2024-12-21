@@ -60,6 +60,22 @@ class ExtratoMaquinaController extends Controller
         // Total de registros filtrados
         $totalFiltered = $query->count();
 
+        // Obter os parâmetros de ordenação
+        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
+        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
+
+        // Definir as colunas para ordenar
+        $columns = [
+            'locais.local_nome',      // Coluna 0
+            'maquinas.maquina_nome',   // Coluna 1
+            'extrato_maquina.extrato_operacao',  // Coluna 2
+            'extrato_maquina.extrato_operacao_tipo', // Coluna 3
+            'extrato_maquina.data_criacao'  // Coluna 4
+        ];
+
+        // Ordenar a consulta
+        $query->orderBy($columns[$orderColumn], $orderDirection);
+
         // Paginar os dados
         $extrato = $query->offset($request->get('start', 0))
                          ->limit($perPage)
