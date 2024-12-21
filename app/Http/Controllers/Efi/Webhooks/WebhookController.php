@@ -68,6 +68,9 @@ class WebhookController extends Controller
                 ->whereRaw('RIGHT(id_placa, 4) = ?', [$id_placa_primeiros_dezoito_digitos])->where('deleted_at', NULL)
                 ->get()->toArray();
 
+                \Log::info('------Placa encontrada----');
+            \Log::info( $id_placa_result);
+
             $id_placa = $id_placa_result[0]->id_placa;
             $id_maquina = $id_placa_result[0]->id_maquina;
 
