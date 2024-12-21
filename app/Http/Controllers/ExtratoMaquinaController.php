@@ -522,88 +522,95 @@ class ExtratoMaquinaController extends Controller
     }
 
     public function generateReportAllTransactions(Request $request)
-    {
-        try {
-            // Pegando os parâmetros de paginação
-            $perPage = $request->get('length', 25200); // Número de registros por página
-            $page = $request->get('start', 0) / $perPage + 1; // Página atual
-        
-            // Pegando os parâmetros de filtro
-            $clientes = $request->input('id_cliente', []); // array de IDs de clientes
-            $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
-            //$locais = $request->input('id_local', []); // array de IDs de locais
-            $tipoTransacao = $request->input('tipo_transacao');
-            $dataInicio = $request->input('data_inicio');
-            $dataFim = $request->input('data_fim');
-        
-            // Iniciando a query
-            $query = DB::table('extrato_maquina')
-                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
-                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
-                ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
-                ->select(
-                    //'locais.local_nome',
-                    'cliente_local.id_cliente',
-                    'maquinas.maquina_nome',
-                    'extrato_maquina.extrato_operacao',
-                    'extrato_maquina.extrato_operacao_valor',
-                    'extrato_maquina.extrato_operacao_tipo',
-                    'extrato_maquina.data_criacao'
-                );
-        
-            // Aplicando filtros para clientes (se múltiplos IDs foram passados)
-            if (!empty($clientes)) {
-                $query->whereIn('cliente_local.id_cliente', $clientes);
-            }
-        
-            // Aplicando filtros para máquinas (se múltiplos IDs foram passados)
-            if (!empty($maquinas)) {
-                $query->whereIn('maquinas.id_maquina', $maquinas);
-            }
-        
-            // Aplicando filtros para locais (se múltiplos IDs foram passados)
-            /*if (!empty($locais)) {
-                $query->whereIn('locais.id_local', $locais);
-            }*/
-        
-            // Aplicando filtro de tipo de transação
-            if ($tipoTransacao) {
-                $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
-            }
-        
-            // Aplicando filtro de data de início
-            if ($dataInicio) {
-                $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
-            }
-        
-            // Aplicando filtro de data de fim
-            if ($dataFim) {
-                $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
-            }
-        
-            // Total de registros após aplicar os filtros
-            $totalRecords = $query->count();
-        
-            // Paginar os dados
-            $extrato = $query->orderBy('extrato_maquina.data_criacao', 'desc')
-                             ->offset($request->get('start', 0))
-                             ->limit($perPage)
-                             ->get();
-        
-            // Responder no formato esperado pelo DataTables
-            return response()->json([
-                'data' => $extrato,
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $totalRecords // Se houver filtros, você deve atualizar isso para refletir o número filtrado
-            ], 200);
-        
-        } catch (Exception $e) {
-            return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+{
+    try {
+        // Pegando os parâmetros de paginação
+        $perPage = $request->get('length', 25200); // Número de registros por página
+        $page = $request->get('start', 0) / $perPage + 1; // Página atual
+    
+        // Pegando os parâmetros de filtro
+        $clientes = $request->input('id_cliente', []); // array de IDs de clientes
+        $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
+        //$locais = $request->input('id_local', []); // array de IDs de locais
+        $tipoTransacao = $request->input('tipo_transacao');
+        $dataInicio = $request->input('data_inicio');
+        $dataFim = $request->input('data_fim');
+    
+        // Iniciando a query
+        $query = DB::table('extrato_maquina')
+            ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+            ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
+            ->select(
+                'cliente_local.id_cliente',
+                'maquinas.maquina_nome',
+                'extrato_maquina.extrato_operacao',
+                'extrato_maquina.extrato_operacao_valor',
+                'extrato_maquina.extrato_operacao_tipo',
+                'extrato_maquina.data_criacao'
+            );
+    
+        // Aplicando filtros para clientes (se múltiplos IDs foram passados)
+        if (!empty($clientes)) {
+            $query->whereIn('cliente_local.id_cliente', $clientes);
         }
-    }
+    
+        // Aplicando filtros para máquinas (se múltiplos IDs foram passados)
+        if (!empty($maquinas)) {
+            $query->whereIn('maquinas.id_maquina', $maquinas);
+        }
+    
+        // Aplicando filtro de tipo de transação
+        if ($tipoTransacao) {
+            $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
+        }
+    
+        // Aplicando filtro de data de início
+        if ($dataInicio) {
+            $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
+        }
+    
+        // Aplicando filtro de data de fim
+        if ($dataFim) {
+            $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
+        }
+    
+        // Obter os parâmetros de ordenação
+        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
+        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
 
+        // Definir as colunas para ordenar
+        $columns = [
+            'cliente_local.id_cliente',        // Coluna 0
+            'maquinas.maquina_nome',           // Coluna 1
+            'extrato_maquina.extrato_operacao',// Coluna 2
+            'extrato_maquina.extrato_operacao_valor', // Coluna 3
+            'extrato_maquina.extrato_operacao_tipo',  // Coluna 4
+            'extrato_maquina.data_criacao'    // Coluna 5
+        ];
+
+        // Ordenar a consulta
+        $query->orderBy($columns[$orderColumn], $orderDirection);
     
+        // Total de registros após aplicar os filtros
+        $totalRecords = $query->count();
     
+        // Paginar os dados
+        $extrato = $query->offset($request->get('start', 0))
+                         ->limit($perPage)
+                         ->get();
+    
+        // Responder no formato esperado pelo DataTables
+        return response()->json([
+            'data' => $extrato,
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords // Se houver filtros, você deve atualizar isso para refletir o número filtrado
+        ], 200);
+    
+    } catch (Exception $e) {
+        return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+    }
+}      
 
     public function generateReportAllTransactionsGetTotal(Request $request)
     {
