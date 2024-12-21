@@ -59,13 +59,13 @@ class WebhookController extends Controller
                 $tarifa = $webhook['pix'][0]['gnExtras']['tarifa'];
             }
 
-            $id_placa_ultimos_quatro_digitos = substr($txid, 18);
+            $id_placa_primeiros_dezoito_digitos = substr($txid, 0, 18);
 
-            \Log::info('------id_ultimos_quatro_extraído----');
-            \Log::info( $id_placa_ultimos_quatro_digitos);
+            \Log::info('------id_placa_extraído----');
+            \Log::info( $id_placa_primeiros_dezoito_digitos);
 
             $id_placa_result = DB::table('maquinas')
-                ->whereRaw('RIGHT(id_placa, 4) = ?', [$id_placa_ultimos_quatro_digitos])->where('deleted_at', NULL)
+                ->whereRaw('RIGHT(id_placa, 4) = ?', [$id_placa_primeiros_dezoito_digitos])->where('deleted_at', NULL)
                 ->get()->toArray();
 
             $id_placa = $id_placa_result[0]->id_placa;
