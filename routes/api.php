@@ -53,6 +53,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::get('extrato/acumulado','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachine');
     Route::get('extrato/total/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotal');
     Route::get('extrato/devolucao/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotalDevolucao');
+    Route::get('extrato/saldo/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotalSaldo');
     Route::get('extrato/acumuladoLocal','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachineFromLocal');
     Route::get('totalMaquinas','App\Http\Controllers\ExtratoMaquinaController@getTheLastTransactionPerMachine');
     Route::post('relatorioTotalTransacoes','App\Http\Controllers\ExtratoMaquinaController@generateReportAllTransactions');
