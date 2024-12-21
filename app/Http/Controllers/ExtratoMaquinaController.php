@@ -256,7 +256,7 @@ class ExtratoMaquinaController extends Controller
         // Responder no formato esperado pelo DataTables
         return response()->json([
             'data' => $extrato,
-            'recordsTotal' => $totalFiltered, // Total de registros sem filtro
+            'recordsTotal' => count($extrato), // Total de registros sem filtro
             'recordsFiltered' => $totalFiltered // Total de registros após o filtro
         ], 200);
     } catch (Exception $e) {
