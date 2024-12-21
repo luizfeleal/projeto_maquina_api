@@ -188,65 +188,85 @@ class ExtratoMaquinaController extends Controller
     }
 
     public function acumulatedPerMachine(Request $request)
-    {
-        try {
-            // Número de registros por página
-            $perPage = $request->get('length', 10); 
-            // Página atual
-            $page = $request->get('start', 0) / $perPage + 1;
-        
-            // Query base com joins e COALESCE para totalizadores
-            $query = DB::table('maquinas')
-                ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
-                ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
-                ->select(
-                    'locais.local_nome',
-                    'maquinas.maquina_nome',
-                    'maquinas.id_placa',
-                    'maquinas.maquina_status',
-                    DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
-                    DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
-                    DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
-                    DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
-                )
-                ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
-        
-            // Filtro de pesquisa
-            $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
-            if (!empty($search)) {
-                $query->where(function ($q) use ($search) {
-                    // Adicione aqui as colunas que podem ser pesquisadas
-                    $q->where('locais.local_nome', 'like', "%$search%")
-                      ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
-                      ->orWhere('maquinas.id_placa', 'like', "%$search%")
-                      ->orWhere('maquinas.maquina_status', 'like', "%$search%");
-                });
-            }
-        
-            // Total de registros sem filtro
-            $totalRecords = DB::table('maquinas')->count();
-        
-            // Total de registros filtrados
-            $totalFiltered = $query->count();
-        
-            // Paginar os dados
-            $extrato = $query->offset($request->get('start', 0))
-                             ->limit($perPage)
-                             ->get();
-        
-            // Responder no formato esperado pelo DataTables
-            return response()->json([
-                'data' => $extrato,
-                'recordsTotal' => $totalRecords, // Total de registros sem filtro
-                'recordsFiltered' => $totalFiltered // Total de registros após o filtro
-            ], 200);
-        } catch (Exception $e) {
-            return response()->json([
-                'error' => 'Houve um erro ao tentar coletar o extrato.',
-                'message' => $e->getMessage()
-            ], 500);
+{
+    try {
+        // Número de registros por página
+        $perPage = $request->get('length', 10); 
+        // Página atual
+        $page = $request->get('start', 0) / $perPage + 1;
+    
+        // Query base com joins e COALESCE para totalizadores
+        $query = DB::table('maquinas')
+            ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
+            ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->select(
+                'locais.local_nome',
+                'maquinas.maquina_nome',
+                'maquinas.id_placa',
+                'maquinas.maquina_status',
+                DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
+                DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
+                DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
+                DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
+            )
+            ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
+    
+        // Filtro de pesquisa
+        $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                // Adicione aqui as colunas que podem ser pesquisadas
+                $q->where('locais.local_nome', 'like', "%$search%")
+                  ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
+                  ->orWhere('maquinas.id_placa', 'like', "%$search%")
+                  ->orWhere('maquinas.maquina_status', 'like', "%$search%");
+            });
         }
+    
+        // Obter os parâmetros de ordenação
+        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
+        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
+
+        // Definir as colunas para ordenar
+        $columns = [
+            'locais.local_nome',            // Coluna 0
+            'maquinas.maquina_nome',         // Coluna 1
+            'maquinas.id_placa',             // Coluna 2
+            'maquinas.maquina_status',       // Coluna 3
+            'total_maquina',                 // Coluna 4
+            'total_pix',                     // Coluna 5
+            'total_cartao',                  // Coluna 6
+            'total_dinheiro'                 // Coluna 7
+        ];
+
+        // Aplicar ordenação na consulta
+        $query->orderBy($columns[$orderColumn], $orderDirection);
+    
+        // Total de registros sem filtro
+        $totalRecords = DB::table('maquinas')->count();
+    
+        // Total de registros filtrados
+        $totalFiltered = $query->count();
+    
+        // Paginar os dados
+        $extrato = $query->offset($request->get('start', 0))
+                         ->limit($perPage)
+                         ->get();
+    
+        // Responder no formato esperado pelo DataTables
+        return response()->json([
+            'data' => $extrato,
+            'recordsTotal' => $totalRecords, // Total de registros sem filtro
+            'recordsFiltered' => $totalFiltered // Total de registros após o filtro
+        ], 200);
+    } catch (Exception $e) {
+        return response()->json([
+            'error' => 'Houve um erro ao tentar coletar o extrato.',
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     public static function acumulatedPerMachineOfClient(Request $request){
         try {
