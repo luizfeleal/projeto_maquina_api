@@ -617,111 +617,106 @@ public static function acumulatedPerMachineOfClient(Request $request)
     }
 }      
 
-    public function generateReportAllTransactionsGetTotal(Request $request)
-    {
-        try {
-            // Pegando os parâmetros de filtro
-            $perPage = $request->get('length', 10); // Número de registros por página
-            $page = $request->get('start', 0) / $perPage + 1; // Página atual
+public function generateReportAllTransactionsGetTotal(Request $request)
+{
+    try {
+        // Pegando os parâmetros de filtro
+        $perPage = $request->get('length', 10); // Número de registros por página
+        $start = $request->get('start', 0); // Offset para paginação
+        $search = $request->input('search.value', ''); // Valor para busca global
         
-            // Pegando os parâmetros de filtro
-            $clientes = $request->input('id_cliente', []); // array de IDs de clientes
-            $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
-            $locais = $request->input('id_local', []); // array de IDs de locais
-            $tipoTransacao = $request->input('tipo_transacao');
-            $dataInicio = $request->input('data_inicio');
-            $dataFim = $request->input('data_fim');
+        $clientes = $request->input('id_cliente', []);
+        $maquinas = $request->input('id_maquina', []);
+        $locais = $request->input('id_local', []);
+        $tipoTransacao = $request->input('tipo_transacao');
+        $dataInicio = $request->input('data_inicio');
+        $dataFim = $request->input('data_fim');
         
-            // Iniciando a query
-            $query = DB::table('extrato_maquina')
-                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
-                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
-                ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
-                ->select(
-                    'locais.local_nome',
-                    'cliente_local.id_cliente',
-                    'maquinas.maquina_nome',
-                    'extrato_maquina.extrato_operacao',
-                    'extrato_maquina.extrato_operacao_valor',
-                    'extrato_maquina.extrato_operacao_tipo',
-                    'extrato_maquina.data_criacao'
-                );
-        
-            // Aplicando filtros para clientes (se múltiplos IDs foram passados)
-            if (!empty($clientes)) {
-                $query->whereIn('cliente_local.id_cliente', $clientes);
-            }
-        
-            // Aplicando filtros para máquinas (se múltiplos IDs foram passados)
-            if (!empty($maquinas)) {
-                $query->whereIn('maquinas.id_maquina', $maquinas);
-            }
-        
-            // Aplicando filtros para locais (se múltiplos IDs foram passados)
-            if (!empty($locais)) {
-                $query->whereIn('locais.id_local', $locais);
-            }
-        
-            // Aplicando filtro de tipo de transação
-            if ($tipoTransacao) {
-                $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
-            }
-        
-            // Aplicando filtro de data de início
-            if ($dataInicio) {
-                $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
-            }
-        
-            // Aplicando filtro de data de fim
-            if ($dataFim) {
-                $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
-            }
-        
-            // Executando a query para obter os dados
-            $resultados = $query->get();
-        
-            // Tipos de transação definidos (padronizados para minúsculas)
-            $tiposDefinidos = ['estorno', 'pix', 'cartão', 'dinheiro'];
-        
-            // Calculando o total de extrato_operacao_valor por categoria de extrato_operacao_tipo
-            $totaisPorTipo = $resultados->groupBy(function ($item) {
-                // Padronizando o tipo de operação para minúsculas
-                return strtolower($item->extrato_operacao_tipo);
-            })->map(function ($items, $tipo) {
-                // Somando os valores para o tipo específico, ignorando valores nulos
-                $total = $items->sum(function ($item) {
-                    return $item->extrato_operacao_valor ?? 0; // Caso seja nulo, considerar 0
-                });
-        
-                return [
-                    'tipo' => ucfirst($tipo), // Retorna o tipo com a primeira letra maiúscula para consistência
-                    'total' => $total,
-                ];
-            })->values();
-        
-            // Garantindo que todos os tipos definidos estejam no resultado com zero se não existirem
-            foreach ($tiposDefinidos as $tipo) {
-                if (!$totaisPorTipo->contains('tipo', ucfirst($tipo))) {
-                    $totaisPorTipo->push([
-                        'tipo' => ucfirst($tipo),
-                        'total' => 0,
-                    ]);
-                }
-            }
-        
-            // Ordenando os tipos definidos na ordem desejada
-            $totaisPorTipo = $totaisPorTipo->sortBy(function ($item) use ($tiposDefinidos) {
-                return array_search(strtolower($item['tipo']), $tiposDefinidos);
-            })->values();
-        
-            // Retorno dos resultados
-            return response()->json($totaisPorTipo, 200);
-        
-        } catch (Exception $e) {
-            return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+        // Inicializando a query
+        $query = DB::table('extrato_maquina')
+            ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+            ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->join('cliente_local', 'cliente_local.id_local', '=', 'locais.id_local')
+            ->select(
+                'locais.local_nome',
+                'cliente_local.id_cliente',
+                'maquinas.maquina_nome',
+                'extrato_maquina.extrato_operacao',
+                'extrato_maquina.extrato_operacao_valor',
+                'extrato_maquina.extrato_operacao_tipo',
+                'extrato_maquina.data_criacao'
+            );
+
+        // Aplicando filtros
+        if (!empty($clientes)) {
+            $query->whereIn('cliente_local.id_cliente', $clientes);
+        }
+        if (!empty($maquinas)) {
+            $query->whereIn('maquinas.id_maquina', $maquinas);
+        }
+        if (!empty($locais)) {
+            $query->whereIn('locais.id_local', $locais);
+        }
+        if ($tipoTransacao) {
+            $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
+        }
+        if ($dataInicio) {
+            $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
+        }
+        if ($dataFim) {
+            $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
         }
         
+        // Aplicando busca global
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->orWhere('locais.local_nome', 'like', "%{$search}%")
+                  ->orWhere('cliente_local.id_cliente', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_nome', 'like', "%{$search}%")
+                  ->orWhere('extrato_maquina.extrato_operacao', 'like', "%{$search}%")
+                  ->orWhere('extrato_maquina.extrato_operacao_tipo', 'like', "%{$search}%");
+            });
+        }
+
+        // Ordenação
+        $columns = [
+            'locais.local_nome',
+            'cliente_local.id_cliente',
+            'maquinas.maquina_nome',
+            'extrato_maquina.extrato_operacao',
+            'extrato_maquina.extrato_operacao_valor',
+            'extrato_maquina.extrato_operacao_tipo',
+            'extrato_maquina.data_criacao'
+        ];
+        
+        $order = $request->input('order', []);
+        if (!empty($order)) {
+            $columnIndex = $order[0]['column']; // Índice da coluna
+            $orderDir = $order[0]['dir']; // Direção da ordenação (asc ou desc)
+            $query->orderBy($columns[$columnIndex], $orderDir);
+        }
+
+        // Total de registros sem filtros
+        $totalRecords = DB::table('extrato_maquina')->count();
+
+        // Total de registros filtrados
+        $totalFiltered = $query->count();
+
+        // Aplicando paginação
+        $resultados = $query->offset($start)->limit($perPage)->get();
+
+        // Retornando resposta no formato DataTables
+        return response()->json([
+            'draw' => $request->input('draw'), // Enviado pelo DataTables para identificação
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalFiltered,
+            'data' => $resultados,
+        ], 200);
+    } catch (Exception $e) {
+        return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
     }
+}
+
 
     public function generateReportAllTransactionsTax(Request $request)
     {
