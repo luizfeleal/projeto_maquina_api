@@ -576,8 +576,10 @@ public static function acumulatedPerMachineOfClient(Request $request)
         }
     
         // Obter os parâmetros de ordenação
-        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
-        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
+        $order = $request->get('order', []); // Recupera o 'order' ou um array vazio
+        $orderColumn = isset($order[0]['column']) ? (int) $order[0]['column'] : 0; // Coluna padrão 0
+        $orderDirection = isset($order[0]['dir']) ? $order[0]['dir'] : 'asc'; // Direção padrão 'asc'
+
 
         // Definir as colunas para ordenar
         $columns = [
@@ -588,6 +590,9 @@ public static function acumulatedPerMachineOfClient(Request $request)
             'extrato_maquina.extrato_operacao_tipo',  // Coluna 4
             'extrato_maquina.data_criacao'    // Coluna 5
         ];
+
+        // Garantir que a coluna existe na lista de colunas válidas
+        $orderColumn = isset($columns[$orderColumn]) ? $orderColumn : 0;
 
         // Ordenar a consulta
         $query->orderBy($columns[$orderColumn], $orderDirection);
