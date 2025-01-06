@@ -59,7 +59,7 @@ class MaquinasController extends Controller
             
             $token = AuthService::coletarToken();
 
-            $maquinas = Maquinas::where('id_placa', $request['id_placa'])->where('deleted_at', null)->get();
+            $maquinas = Maquinas::where('id_placa', $request['id_placa'])->where('deleted_at', null)->get()->toArray();
 
             if(!empty($maquinas)){
                 return response()->json(['errors' => "Já existe uma máquina registrada para esse ID de placa. Caso queira registrar novamente, remova a placa existente."], 400);
