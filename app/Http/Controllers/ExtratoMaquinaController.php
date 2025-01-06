@@ -267,6 +267,77 @@ class ExtratoMaquinaController extends Controller
     }
 }
 
+public function acumulatedPerMachineFromLocal(Request $request)
+{
+    try {
+        $idLocal = $request->id_local;
+
+        // Base da consulta
+        $query = DB::table('maquinas')
+            ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
+            ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->select(
+                'locais.local_nome',
+                'maquinas.maquina_nome',
+                'maquinas.id_placa',
+                'maquinas.maquina_status',
+                DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
+                DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
+                DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
+                DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
+            )
+            ->where('maquinas.id_local', $idLocal)
+            ->whereNull('maquinas.deleted_at')
+            ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
+
+        // Pesquisa
+        if ($search = $request->input('search.value')) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->orWhere('locais.local_nome', 'like', "%{$search}%")
+                    ->orWhere('maquinas.maquina_nome', 'like', "%{$search}%")
+                    ->orWhere('maquinas.id_placa', 'like', "%{$search}%");
+            });
+        }
+
+        // Ordenação
+        $columns = [
+            'locais.local_nome',
+            'maquinas.maquina_nome',
+            'maquinas.id_placa',
+            'maquinas.maquina_status',
+            'total_maquina',
+            'total_pix',
+            'total_cartao',
+            'total_dinheiro',
+        ];
+
+        if ($order = $request->input('order.0')) {
+            $columnIndex = $order['column'];
+            $direction = $order['dir']; // asc ou desc
+            if (isset($columns[$columnIndex])) {
+                $query->orderBy($columns[$columnIndex], $direction);
+            }
+        }
+
+        // Total de registros para a contagem
+        $totalRecords = $query->count();
+
+        // Paginação
+        $extrato = $query->offset($request->get('start', 0))
+            ->limit($request->get('length', 10))
+            ->get();
+
+        // Responder no formato esperado pelo DataTables
+        return response()->json([
+            'data' => $extrato,
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+        ], 200);
+    } catch (Exception $e) {
+        return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
+    }
+}
+
 
 public static function acumulatedPerMachineOfClient(Request $request)
 {
