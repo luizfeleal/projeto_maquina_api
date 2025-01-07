@@ -121,7 +121,7 @@ class QrController extends Controller
             $payload = (new QrCodeService)->setChavePix($chavePix)
                                       ->setDescricao('Pagamento')
                                       ->setNomeTitularConta($partesNome[0])
-                                      ->setNomeCidadeTitularConta("PARANA")
+                                      ->setNomeCidadeTitularConta("CURITIBA")
                                       ->setTxid($txid)
                                       ->setValorTransacao(0.00);
 
