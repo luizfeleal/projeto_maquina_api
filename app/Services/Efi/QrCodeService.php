@@ -188,7 +188,7 @@ class QrCodeService
         $txid = $id_placa . $timestamp . $hash;
 
         // Garante que o txid tenha no máximo 24 caracteres
-        return substr($txid, 0, 20);
+        return substr($txid, 0, 6);
     }
 
 
