@@ -65,7 +65,7 @@ class WebhookController extends Controller
             \Log::info( $id_placa_primeiros_dezoito_digitos);
 
             $id_placa_result = DB::table('maquinas')
-                ->where('is_placa', [$id_placa_primeiros_dezoito_digitos])->where('deleted_at', NULL)
+                ->where('id_placa', [$id_placa_primeiros_dezoito_digitos])->where('deleted_at', NULL)
                 ->get()->toArray();
 
                 \Log::info('------Placa encontrada----');
