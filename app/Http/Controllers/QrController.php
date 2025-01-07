@@ -120,13 +120,14 @@ class QrController extends Controller
             
             $payload = (new QrCodeService)->setChavePix($chavePix)
                                       ->setDescricao('Pagamento')
-                                      ->setNomeTitularConta("LUIZ FELIPE")
+                                      ->setNomeTitularConta($partesNome[0])
                                       ->setNomeCidadeTitularConta("CURITIBA")
                                       ->setTxid($txid)
                                       ->setValorTransacao(null);
 
             $payloadQrCode = $payload->getPayload();
-            
+            \Log::info('Payload qrcode');
+            \Log::info($payloadQrCode);
                                   
             // Gerar o QR code
            $obQrCode = new MpdfQrCode($payloadQrCode);
