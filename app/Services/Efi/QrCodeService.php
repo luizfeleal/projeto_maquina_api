@@ -103,7 +103,11 @@ class QrCodeService
 
     public function setValorTransacao($valorTransacao)
     {
-        $this->valorTransacao = (string)number_format($valorTransacao, 2, '.', '');
+        if (is_null($valorTransacao) || empty($valorTransacao)) {
+            $this->valorTransacao = null;
+        } else {
+            $this->valorTransacao = (string)number_format($valorTransacao, 2, '.', '');
+        }
         return $this;
     }
 
