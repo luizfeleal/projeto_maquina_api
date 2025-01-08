@@ -162,20 +162,25 @@ class QrCodeService
 
 
     public function getPayload()
-    {
-        $payload = $this->getValor(self::ID_PAYLOAD_FORMAT_INDICATOR, '01') .
-            $this->getInformacaoTitularConta() .
-            $this->getValor(self::ID_MERCHANT_CATEGORY_CODE, '0000') .
-            $this->getValor(self::ID_TRANSACTION_CURRENCY, '986') .
-            $this->getValor(self::ID_TRANSACTION_AMOUNT, $this->valorTransacao) .
-            $this->getValor(self::ID_COUNTRY_CODE, 'BR') .
-            $this->getValor(self::ID_MERCHANT_NAME, $this->nomeTitularConta) .
-            $this->getValor(self::ID_MERCHANT_CITY, $this->nomeCidadeTitularConta) .
-            $this->getCampoAdicionalTemplate();
+{
+    $payload = $this->getValor(self::ID_PAYLOAD_FORMAT_INDICATOR, '01') .
+        $this->getInformacaoTitularConta() .
+        $this->getValor(self::ID_MERCHANT_CATEGORY_CODE, '0000') .
+        $this->getValor(self::ID_TRANSACTION_CURRENCY, '986');
 
-        //RETORNA PAYLOAD + CRC16
-        return $payload . $this->getCRC16($payload);
+    // Verifica se o valor da transação foi definido
+    if (!empty($this->valorTransacao)) {
+        $payload .= $this->getValor(self::ID_TRANSACTION_AMOUNT, $this->valorTransacao);
     }
+
+    $payload .= $this->getValor(self::ID_COUNTRY_CODE, 'BR') .
+        $this->getValor(self::ID_MERCHANT_NAME, $this->nomeTitularConta) .
+        $this->getValor(self::ID_MERCHANT_CITY, $this->nomeCidadeTitularConta) .
+        $this->getCampoAdicionalTemplate();
+
+    // Retorna o payload completo com o CRC16
+    return $payload . $this->getCRC16($payload);
+}
 
 
 
