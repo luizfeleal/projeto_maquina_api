@@ -15,7 +15,6 @@ class NotificacaoService
     public static function coletarDadosNotificacao($codigoNotificacao)
     {
 
-        try{
 
             $credenciais = CredApiPix::where("tipo_cred", "pagbank")->get()->toArray();
 
@@ -95,11 +94,7 @@ class NotificacaoService
             $resposta = ["http_code"=> $httpcode, "resposta" => $dado_transacao];
 
             return $resposta;
-        }catch(\Exception $e){
-
-            $resposta = ["http_code"=> $httpcode, "resposta" => $e];
-            return $resposta;
-        }
+        
 
     }
 
