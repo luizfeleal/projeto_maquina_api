@@ -19,8 +19,6 @@ class NotificacaoService
     
     foreach ($credenciais as $index => $credencial) {
         $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($credencial);
-        \Log::info('---------------CUma credencial usada---------------');
-        \Log::info($dadoCredDescriptografado);
         $email = $dadoCredDescriptografado['client_id'];
         $token = $dadoCredDescriptografado['client_secret'];
         $url = env('URL_PAGBANK_NOTIFICACAO') . "/$codigoNotificacao?email=$email&token=$token";
