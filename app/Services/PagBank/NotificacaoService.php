@@ -13,56 +13,37 @@ class NotificacaoService
 
 
     public static function coletarDadosNotificacao($codigoNotificacao)
-    {
+{
+    $credenciais = CredApiPix::where("tipo_cred", "pagbank")->get()->toArray();
 
-
-            $credenciais = CredApiPix::where("tipo_cred", "pagbank")->get()->toArray();
-
-            \Log::info('---------------Credenciais registradas---------------');
-            \Log::info($credenciais);
-            foreach($credenciais as $index => $credencial){
-                $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($credencial);
-                $email = $dadoCredDescriptografado['client_id'];
-                $token = $dadoCredDescriptografado['client_secret'];
-                $url = env('URL_PAGBANK_NOTIFICACAO') . "/$codigoNotificacao?email=$email&token=$token";
     
-    
-                $ch = curl_init($url);
-    
-                curl_setopt_array(
-                    $ch,
-                    array(
-                        CURLOPT_CUSTOMREQUEST => 'GET',
-                        CURLOPT_RETURNTRANSFER => true,
-                    )
-                );
-    
-                $result = curl_exec($ch);
-    
-                $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    foreach ($credenciais as $index => $credencial) {
+        $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($credencial);
+        \Log::info('---------------CUma credencial usada---------------');
+        \Log::info($dadoCredDescriptografado);
+        $email = $dadoCredDescriptografado['client_id'];
+        $token = $dadoCredDescriptografado['client_secret'];
+        $url = env('URL_PAGBANK_NOTIFICACAO') . "/$codigoNotificacao?email=$email&token=$token";
 
-                curl_close($ch);
+        $ch = curl_init($url);
 
-                if($httpcode == 200){
-                    break;
-                }
+        curl_setopt_array(
+            $ch,
+            array(
+                CURLOPT_CUSTOMREQUEST => 'GET',
+                CURLOPT_RETURNTRANSFER => true,
+            )
+        );
 
-                /*if((count($credenciais) - $index) == 1 && $httpcode !== 200){
-                    return "Não funcionou";
-                }*/
-            }
+        $result = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-
-            \Log::info('aqui está a notificacao---------');
-            \Log::info($result);
-
-
+        if ($httpcode == 200) {
+            \Log::info("Requisição bem-sucedida com a credencial $index.");
             $xml = simplexml_load_string($result);
-
-            
-            
             $xml_array = json_decode(json_encode($xml), true);
-            
+
             $codigo_transacao = $xml_array['code'];
             $valor_transacao = $xml_array['grossAmount'];
             $valor_taxa = $xml_array['grossAmount'] - $xml_array['netAmount'];
@@ -84,21 +65,24 @@ class NotificacaoService
                 'extrato_operacao_status' => 1,
                 'extrato_operacao' => "D"
             ];
-            
+
             $dado_transacao = [
                 "credito" => $data_credito,
                 "debito" => $data_debito,
                 "device" => $device_info['serialNumber']
             ];
 
-
-
-            $resposta = ["http_code"=> $httpcode, "resposta" => $dado_transacao];
-
-            return $resposta;
-        
-
+            return ["http_code" => $httpcode, "resposta" => $dado_transacao];
+        } else {
+            \Log::warning("Credencial $index falhou com código HTTP: $httpcode.");
+        }
     }
+
+    // Caso nenhuma credencial funcione
+    \Log::error("Todas as credenciais falharam para o código de notificação: $codigoNotificacao.");
+    return ["http_code" => 500, "resposta" => null];
+}
+
 
     public static function registrarMaquinas($token, array $ids_placa)
     {
