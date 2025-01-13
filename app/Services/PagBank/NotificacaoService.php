@@ -18,6 +18,8 @@ class NotificacaoService
 
             $credenciais = CredApiPix::where("tipo_cred", "pagbank")->get()->toArray();
 
+            \Log::info('---------------Credenciais registradas---------------');
+            \Log::info($credenciais);
             foreach($credenciais as $index => $credencial){
                 $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($credencial);
                 $email = $dadoCredDescriptografado['client_id'];
