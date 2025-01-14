@@ -141,6 +141,10 @@ class WebhookController extends Controller
                     break;
                 }
 
+                \Log::info('------------- $tentativas ------------');
+                \Log::info($tentativas);
+                \Log::info('------------- $maxTentativas ------------');
+                \Log::info($maxTentativas);
                 // Se atingir o número máximo de tentativas, exibe uma mensagem de erro ou realiza outra ação
                 if ($tentativas >= $maxTentativas) {
                     $gerarDevolucao = true;
