@@ -26,16 +26,17 @@ class ExtratoMaquinaController extends Controller
 
         // Query base com joins
         $query = DB::table('extrato_maquina')
-            ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
-            ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
-            ->select(
-                'locais.local_nome',
-                'maquinas.maquina_nome',
-                'extrato_maquina.extrato_operacao',
-                'extrato_maquina.extrato_operacao_valor',
-                'extrato_maquina.extrato_operacao_tipo',
-                'extrato_maquina.data_criacao'
-            );
+        ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+        ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+        ->select(
+            'locais.local_nome',
+            'maquinas.maquina_nome',
+            'extrato_maquina.extrato_operacao',
+            'extrato_maquina.extrato_operacao_valor',
+            'extrato_maquina.extrato_operacao_tipo',
+            DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%d/%m/%Y %H:%i') as data_criacao") // Formatando a data
+        )
+        ->orderBy('extrato_maquina.data_criacao', 'desc'); // Ordenação padrão
 
         // Filtro de pesquisa
         $search = $request->get('search'); // Valor da pesquisa do DataTables
