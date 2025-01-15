@@ -688,6 +688,8 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $extrato = $query->offset($request->get('start', 0))
                          ->limit($perPage)
                          ->get();
+
+                         return response()->json('cheguei', 200);
     
         // Responder no formato DataTables
         return response()->json([
