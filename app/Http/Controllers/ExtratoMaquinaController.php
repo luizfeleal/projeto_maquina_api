@@ -636,6 +636,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
         if ($tipoTransacao) {
             $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
         }
+        return response()->json($dataInicio, 200);
         if ($dataInicio) {
 
             // Converte para o formato 'Y-m-d 00:00:00' para comparar com a data do banco
