@@ -598,16 +598,16 @@ public static function acumulatedPerMachineOfClient(Request $request)
 {
     try {
 
-        return response()->json($request,200);
         // Pegando os parâmetros de paginação
         $perPage = $request->get('length', 25200); // Número de registros por página
         $page = $request->get('start', 0) / $perPage + 1; // Página atual
-    
+        
         // Pegando os parâmetros de filtro
         $clientes = $request->input('id_cliente', []); // array de IDs de clientes
         $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
         $tipoTransacao = $request->input('tipo_transacao'); // tipo de transação
         $dataInicio = $request->input('data_inicio');
+        return response()->json($dataInicio,200);
         $dataFim = $request->input('data_fim');
     
         // Iniciando a query
