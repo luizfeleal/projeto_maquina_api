@@ -46,7 +46,12 @@ class WebhookController extends Controller
 
             $device_numero = $notificacao['resposta']['device'];
 
+            \Log::info('---------Numero device --------');
+            \Log::info( $device_numero);
+
             $device = MaquinaCartao::where('device',$device_numero)->where('status', 1)->get()->toArray();
+            \Log::info('---------Device Encontrado--------');
+            \Log::info( $device);
             if(empty($device)){
                 Logs::create([
                     "descricao" => "Erro ao tentar liberar uma jogada, device de número: $device_numero não foi encontrado no sistema.",
@@ -56,6 +61,9 @@ class WebhookController extends Controller
                 ]);
             }
             $id_maquina = $device[0]['id_maquina'];
+
+            \Log::info('---------ID Maquina pelo device--------');
+            \Log::info($id_maquina);
 
             $notificacao['resposta']['credito']['id_maquina'] = $id_maquina;
             $notificacao['resposta']['debito']['id_maquina'] = $id_maquina;
