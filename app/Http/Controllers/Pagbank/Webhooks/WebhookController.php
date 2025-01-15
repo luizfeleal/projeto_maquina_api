@@ -74,15 +74,27 @@ class WebhookController extends Controller
             $maquina = Maquinas::where('id_maquina', $id_maquina)->get();
             \Log::info('--------Máquina encontrada cartão------');
             \Log::info($maquina);
-            if(!empty($maquina) && $maquina[0]['bloqueio_jogada_pagbank'] == 1){
+            if(isset($maquina[0])){
+
+                if(!empty($maquina) && $maquina[0]['bloqueio_jogada_pagbank'] == 1){
+                    $liberarJogada = false;
+                    Logs::create([
+                        "descricao" => "Erro ao tentar liberar jogadas! A máquina de cartão se encontra como bloqueada para liberar jogadas por maquininha de cartão.",
+                        "status" => "erro",
+                        "acao" => "liberar jogada",
+                        "id_maquina" => $id_maquina
+                    ]);
+                    return;
+                }
+            }else{
                 $liberarJogada = false;
-                Logs::create([
-                    "descricao" => "Erro ao tentar liberar jogadas! A máquina de cartão se encontra como bloqueada para liberar jogadas por maquininha de cartão.",
-                    "status" => "erro",
-                    "acao" => "liberar jogada",
-                    "id_maquina" => $id_maquina
-                ]);
-                return;
+                    Logs::create([
+                        "descricao" => "Erro ao tentar liberar jogadas! Não foi possível encontrar a máquina. Verifique o registro!",
+                        "status" => "erro",
+                        "acao" => "liberar jogada",
+                        "id_maquina" => $id_maquina
+                    ]);
+                    return;
             }
             $tentativas = 0;
             $maxTentativas = env('TENTATIVAS_PERSISTENCIA_JOGADA');
