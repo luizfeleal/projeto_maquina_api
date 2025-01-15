@@ -637,8 +637,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
             $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
         }
         if ($dataInicio) {
-            return response()->json('cheguei', 200);
-
+            
             // Converte para o formato 'Y-m-d 00:00:00' para comparar com a data do banco
             $dataInicioFormatada = \Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
             return response()->json($dataInicioFormatada, 200);
