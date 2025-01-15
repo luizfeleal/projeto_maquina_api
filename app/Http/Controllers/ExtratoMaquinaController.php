@@ -607,7 +607,6 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
         $tipoTransacao = $request->input('tipo_transacao'); // tipo de transação
         $dataInicio = $request->input('data_inicio');
-        return response()->json($dataInicio,200);
         $dataFim = $request->input('data_fim');
     
         // Iniciando a query
