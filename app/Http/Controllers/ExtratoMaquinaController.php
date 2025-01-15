@@ -607,7 +607,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $dataInicio = $request->input('data_inicio');
         $dataFim = $request->input('data_fim');
     
-        return $dataInicio;
+        return $request;
         // Iniciando a query
         $query = DB::table('extrato_maquina')
             ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
