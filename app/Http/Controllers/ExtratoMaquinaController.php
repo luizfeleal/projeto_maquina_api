@@ -607,8 +607,6 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $dataInicio = $request->data_inicio;
         $dataFim = $request['data_fim'];
     
-        return response()->json($dataInicio, 200);
-        return $request;
         // Iniciando a query
         $query = DB::table('extrato_maquina')
             ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
@@ -642,6 +640,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
 
             // Converte para o formato 'Y-m-d 00:00:00' para comparar com a data do banco
             $dataInicioFormatada = \Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
+            return response()->json($dataInicioFormatada, 200);
             $query->where('extrato_maquina.data_criacao', '>=', $dataInicioFormatada);
         }
         
