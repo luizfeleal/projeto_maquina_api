@@ -607,6 +607,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $dataInicio = $request->data_inicio;
         $dataFim = $request['data_fim'];
     
+        return 'cheguei';
         return $request;
         // Iniciando a query
         $query = DB::table('extrato_maquina')
