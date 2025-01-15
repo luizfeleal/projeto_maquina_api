@@ -604,8 +604,8 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $clientes = $request->input('id_cliente', []); // array de IDs de clientes
         $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
         $tipoTransacao = $request->input('tipo_transacao');
-        $dataInicio = $request->input('data_extrato_inicio');
-        $dataFim = $request->input('data_extrato_fim');
+        $dataInicio = $request->input('data_inicio');
+        $dataFim = $request->input('data_fim');
     
         // Iniciando a query
         $query = DB::table('extrato_maquina')
