@@ -618,8 +618,9 @@ public static function acumulatedPerMachineOfClient(Request $request)
                 'extrato_maquina.extrato_operacao',
                 'extrato_maquina.extrato_operacao_valor',
                 'extrato_maquina.extrato_operacao_tipo',
-                DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%d/%m/%Y %H:%i:%s') as data_criacao")
-            );
+                DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%d/%m/%Y %H:%i') as data_criacao")
+            )
+            ->orderBy('extrato_maquina.data_criacao', 'desc');
     
         // Aplicando filtros para clientes
         if (!empty($clientes)) {
