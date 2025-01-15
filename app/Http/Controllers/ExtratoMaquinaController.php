@@ -601,11 +601,11 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $page = $request->get('start', 0) / $perPage + 1; // Página atual
     
         // Pegando os parâmetros de filtro
-        $clientes = $request->input('id_cliente', []); // array de IDs de clientes
-        $maquinas = $request->input('id_maquina', []); // array de IDs de máquinas
-        $tipoTransacao = $request->input('tipo_transacao');
-        $dataInicio = $request->input('data_inicio');
-        $dataFim = $request->input('data_fim');
+        $clientes = $request['id_cliente'] ? $request['id_cliente'] : []; // array de IDs de clientes
+        $maquinas = $request['id_maquina'] ?$request['id_maquina'] : []; // array de IDs de máquinas
+        $tipoTransacao = $request['tipo_transacao'];
+        $dataInicio = $request['data_inicio'];
+        $dataFim = $request['data_fim'];
     
         return $request;
         // Iniciando a query
