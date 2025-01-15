@@ -637,14 +637,16 @@ public static function acumulatedPerMachineOfClient(Request $request)
             $query->where('extrato_maquina.extrato_operacao_tipo', $tipoTransacao);
         }
     
-        // Aplicando filtro de data de início
         if ($dataInicio) {
-            $query->where('extrato_maquina.data_criacao', '>=', $dataInicio . ' 00:00:00');
+            // Converte para o formato 'Y-m-d 00:00:00' para comparar com a data do banco
+            $dataInicioFormatada = \Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
+            $query->where('extrato_maquina.data_criacao', '>=', $dataInicioFormatada);
         }
-    
-        // Aplicando filtro de data de fim
+        
         if ($dataFim) {
-            $query->where('extrato_maquina.data_criacao', '<=', $dataFim . ' 23:59:59');
+            // Converte para o formato 'Y-m-d 23:59:59' para comparar com a data do banco
+            $dataFimFormatada = \Carbon::createFromFormat('Y-m-d', $dataFim)->endOfDay()->format('Y-m-d H:i:s');
+            $query->where('extrato_maquina.data_criacao', '<=', $dataFimFormatada);
         }
     
         // Adicionar busca global
