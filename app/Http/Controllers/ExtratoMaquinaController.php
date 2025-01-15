@@ -604,7 +604,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $clientes = $request['id_cliente'] ? $request['id_cliente'] : []; // array de IDs de clientes
         $maquinas = $request['id_maquina'] ?$request['id_maquina'] : []; // array de IDs de máquinas
         $tipoTransacao = $request['tipo_transacao'];
-        $dataInicio = $request['data_inicio'];
+        $dataInicio = $request->data_inicio;
         $dataFim = $request['data_fim'];
     
         return $dataInicio;
