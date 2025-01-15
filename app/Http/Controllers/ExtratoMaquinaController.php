@@ -6,6 +6,7 @@ use App\Models\ExtratoMaquina;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 
 
@@ -639,7 +640,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
         if ($dataInicio) {
             
             // Converte para o formato 'Y-m-d 00:00:00' para comparar com a data do banco
-            $dataInicioFormatada = \Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
+            $dataInicioFormatada = Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
            
             return response()->json($dataFimFormatada, 200);
             $query->where('extrato_maquina.data_criacao', '>=', $dataInicioFormatada);
@@ -647,7 +648,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
         
         if ($dataFim) {
             // Converte para o formato 'Y-m-d 23:59:59' para comparar com a data do banco
-            $dataFimFormatada = \Carbon::createFromFormat('Y-m-d', $dataFim)->endOfDay()->format('Y-m-d H:i:s');
+            $dataFimFormatada = Carbon::createFromFormat('Y-m-d', $dataFim)->endOfDay()->format('Y-m-d H:i:s');
             $query->where('extrato_maquina.data_criacao', '<=', $dataFimFormatada);
         }
     
