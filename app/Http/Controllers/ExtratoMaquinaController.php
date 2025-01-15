@@ -638,8 +638,10 @@ public static function acumulatedPerMachineOfClient(Request $request)
         }
     
         if ($dataInicio) {
+
             // Converte para o formato 'Y-m-d 00:00:00' para comparar com a data do banco
             $dataInicioFormatada = \Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
+            return $dataInicioFormatada;
             $query->where('extrato_maquina.data_criacao', '>=', $dataInicioFormatada);
         }
         
