@@ -72,6 +72,8 @@ class WebhookController extends Controller
             }
             
             $maquina = Maquinas::where('id_maquina', $id_maquina)->get();
+            \Log::info('--------Máquina encontrada cartão------');
+            \Log::info($maquina);
             if(!empty($maquina) && $maquina[0]['bloqueio_jogada_pagbank'] == 1){
                 $liberarJogada = false;
                 Logs::create([
