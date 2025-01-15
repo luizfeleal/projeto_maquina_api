@@ -597,6 +597,8 @@ public static function acumulatedPerMachineOfClient(Request $request)
     public function generateReportAllTransactions(Request $request)
 {
     try {
+
+        return response()->json($request,200);
         // Pegando os parâmetros de paginação
         $perPage = $request->get('length', 25200); // Número de registros por página
         $page = $request->get('start', 0) / $perPage + 1; // Página atual
@@ -641,8 +643,6 @@ public static function acumulatedPerMachineOfClient(Request $request)
             
             // Converte para o formato 'Y-m-d 00:00:00' para comparar com a data do banco
             $dataInicioFormatada = Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
-           
-            
             $query->where('extrato_maquina.data_criacao', '>=', $dataInicioFormatada);
         }
         
