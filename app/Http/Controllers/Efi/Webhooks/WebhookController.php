@@ -131,7 +131,7 @@ class WebhookController extends Controller
                 $token = AuthService::coletarToken();
                 \Log::info('--------------Aqui está o id da placa encontrado-------------');
                 \Log::info($id_placa);
-                $resposta = JogadasService::liberarJogada($id_placa, $valor, substr($idE2E, 0, 6), $token);
+                $resposta = JogadasService::liberarJogada($id_placa, $valor, substr($idE2E, 0, 25), $token);
                 \Log::info('-------------tenativa-liberar-joagada-hardware-hardware----------------');
                 \Log::info($resposta);
                 $tentativas++;
