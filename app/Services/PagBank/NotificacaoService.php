@@ -19,6 +19,8 @@ class NotificacaoService
     
     foreach ($credenciais as $index => $credencial) {
         $dadoCredDescriptografado = DescriptografaCredService::descriptografarCred($credencial);
+        \Log::info('----------DADOS CREDENCIAIS-------');
+        \Log::info($dadoCredDescriptografado);
         $email = $dadoCredDescriptografado['client_id'];
         $token = $dadoCredDescriptografado['client_secret'];
         $url = env('URL_PAGBANK_NOTIFICACAO') . "/$codigoNotificacao?email=$email&token=$token";
@@ -36,7 +38,8 @@ class NotificacaoService
         $result = curl_exec($ch);
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-
+        \Log::info('----------resultado da coleta de notificacao--------');
+        \Log::info($result);
         if ($httpcode == 200) {
             \Log::info("Requisição bem-sucedida com a credencial $index.");
             $xml = simplexml_load_string($result);
