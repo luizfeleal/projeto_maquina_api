@@ -25,6 +25,8 @@ class NotificacaoService
         $token = $dadoCredDescriptografado['client_secret'];
         $url = env('URL_PAGBANK_NOTIFICACAO') . "/$codigoNotificacao?email=$email&token=$token";
 
+        \Log::info('-------------URL PAGBANK NOTIFICACAO-----------');
+        \Log::info($url);
         $ch = curl_init($url);
 
         curl_setopt_array(
