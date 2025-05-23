@@ -149,8 +149,9 @@ class MaquinasController extends Controller
         DB::beginTransaction();
         try {
             $token = AuthService::coletarToken();
-            $maquinaService = MaquinasService::removerMaquina($token, $id);
             $maquina = Maquinas::find($id);
+            $id_placa = $maquina->id_placa;
+            $maquinaService = MaquinasService::removerMaquina($token, $id_placa);
             $maquina->delete();
             // Obter todos os registros com o id_maquina especificado
             $qrCodes = QrCode::where('id_maquina', $id)->get();
