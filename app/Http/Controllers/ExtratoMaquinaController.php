@@ -440,8 +440,8 @@ public static function acumulatedPerMachineOfClient(Request $request)
                     'em.data_criacao'
                 )
                 ->whereIn('em.id_maquina', $machines->keys())
-                ->whereRaw('em.id_extrato = (
-                    SELECT MAX(id_extrato)
+                ->whereRaw('em.id_extrato_maquina = (
+                    SELECT MAX(id_extrato_maquina)
                     FROM extrato_maquina
                     WHERE id_maquina = em.id_maquina
                 )')
