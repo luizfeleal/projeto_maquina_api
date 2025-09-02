@@ -462,7 +462,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
                     'extrato_operacao' => $lastTransaction ? $lastTransaction->extrato_operacao : 'N/A',
                     'extrato_operacao_valor' => $lastTransaction ? $lastTransaction->extrato_operacao_valor : 0,
                     'extrato_operacao_tipo' => $lastTransaction ? $lastTransaction->extrato_operacao_tipo : 'N/A',
-                    'data_criacao' => $machine->data_criacao,
+                    'data_criacao' => $lastTransaction->data_criacao,
                 ];
             });
     
