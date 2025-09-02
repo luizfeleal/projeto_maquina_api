@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
-
-
+use Illuminate\Support\Facades\Log;
 
 class ExtratoMaquinaController extends Controller
 {
@@ -454,6 +453,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
             $result = $machines->map(function ($machine) use ($lastTransactions) {
                 $lastTransaction = $lastTransactions->get($machine->id_maquina); // Pegando a última transação ou nulo
     
+                Log:info($result);
                 return [
                     'id_local' => $machine->id_local,
                     'id_maquina' => $machine->id_maquina,
