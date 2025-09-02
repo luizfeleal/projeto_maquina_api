@@ -440,13 +440,15 @@ public static function acumulatedPerMachineOfClient(Request $request)
                     'em.extrato_operacao_tipo',
                     'em.data_criacao'
                 )
-                ->join(DB::raw('(SELECT id_maquina, MAX(data_criacao) AS last_transaction_date FROM extrato_maquina GROUP BY id_maquina) as latest'), function ($join) {
-                    $join->on('em.id_maquina', '=', 'latest.id_maquina')
-                         ->on('em.data_criacao', '=', 'latest.last_transaction_date');
-                })
                 ->whereIn('em.id_maquina', $machines->keys())
+                ->whereRaw('em.id_extrato = (
+                    SELECT MAX(id_extrato)
+                    FROM extrato_maquina
+                    WHERE id_maquina = em.id_maquina
+                )')
                 ->get()
-                ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
+                ->keyBy('id_maquina');
+
     
             // 3. Montar a resposta com todas as máquinas e suas últimas transações
             $result = $machines->map(function ($machine) use ($lastTransactions) {
