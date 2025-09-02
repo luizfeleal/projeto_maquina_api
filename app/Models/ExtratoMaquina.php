@@ -18,6 +18,7 @@ class ExtratoMaquina extends Model
         'extrato_operacao_valor',
         'extrato_operacao_status',
         'extrato_operacao_saldo',
+        'data_criacao'
     ];
 
     public static function rules($id = null)
