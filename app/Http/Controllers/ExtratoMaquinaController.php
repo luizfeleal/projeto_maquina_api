@@ -424,12 +424,12 @@ public static function acumulatedPerMachineOfClient(Request $request)
                     'maquinas.maquina_nome',
                     'maquinas.maquina_status',
                     'locais.local_nome',
-                    'maquinas.data_criacao'
+                    'maquinas.data_criacao as maquina_data_criacao' // alias para evitar conflito
                 )
-                ->where('maquinas.deleted_at', NULL)
+                ->whereNull('maquinas.deleted_at')
                 ->get()
                 ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
-    
+
             // 2. Recuperar a última transação para cada máquina usando uma subconsulta
             $lastTransactions = DB::table('extrato_maquina as em')
                 ->select(
@@ -437,7 +437,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
                     'em.extrato_operacao',
                     'em.extrato_operacao_valor',
                     'em.extrato_operacao_tipo',
-                    'em.data_criacao'
+                    'em.data_criacao as extrato_data_criacao' // alias para distinguir
                 )
                 ->whereIn('em.id_maquina', $machines->keys())
                 ->whereRaw('em.id_extrato_maquina = (
@@ -448,12 +448,10 @@ public static function acumulatedPerMachineOfClient(Request $request)
                 ->get()
                 ->keyBy('id_maquina');
 
-    
             // 3. Montar a resposta com todas as máquinas e suas últimas transações
             $result = $machines->map(function ($machine) use ($lastTransactions) {
                 $lastTransaction = $lastTransactions->get($machine->id_maquina); // Pegando a última transação ou nulo
-    
-                Log::info($lastTransaction);
+
                 return [
                     'id_local' => $machine->id_local,
                     'id_maquina' => $machine->id_maquina,
@@ -463,13 +461,13 @@ public static function acumulatedPerMachineOfClient(Request $request)
                     'extrato_operacao' => $lastTransaction ? $lastTransaction->extrato_operacao : 'N/A',
                     'extrato_operacao_valor' => $lastTransaction ? $lastTransaction->extrato_operacao_valor : 0,
                     'extrato_operacao_tipo' => $lastTransaction ? $lastTransaction->extrato_operacao_tipo : 'N/A',
-                    'data_criacao' => $lastTransaction->data_criacao,
+                    'data_criacao' => $lastTransaction ? $lastTransaction->extrato_data_criacao : null, // agora vem do extrato
                 ];
             });
-    
+
             // Responder no formato esperado pelo DataTables
             return response()->json($result, 200);
-    
+
         } catch (Exception $e) {
             return response()->json(['error' => 'Houve um erro ao tentar coletar os dados das máquinas.'], 500);
         }
