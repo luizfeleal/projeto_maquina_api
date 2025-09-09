@@ -78,10 +78,13 @@ class MaquinasController extends Controller
         } catch (ValidationException $e) {
             MaquinasService::removerMaquina($token, $request['id_placa']);
             DB::rollBack();
+            \Log::error("erro ao registrar a maquina");
+            \Log::error($e);
             return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 422);
         } catch (Exception $e) {
             MaquinasService::removerMaquina($token, $request['id_placa']);
             DB::rollBack();
+            \Log::error("erro ao registrar a maquina");
             \Log::error($e);
 
             return response()->json(['message' => 'Houve um erro ao tentar cadastrar a máquina.'], 500);
