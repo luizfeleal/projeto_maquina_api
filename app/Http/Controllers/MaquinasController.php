@@ -65,6 +65,8 @@ class MaquinasController extends Controller
                 return response()->json(['errors' => "Já existe uma máquina registrada para esse ID de placa. Caso queira registrar novamente, remova a placa existente."], 400);
             }
             $maquinaRegistrada = MaquinasService::registrarMaquinas($token, array($request['id_placa']));
+            \Log::info("maquina registrada resposta");
+            \Log::info($maquinaRegistrada);
             if ($maquinaRegistrada["http_code"] != 200) {
                 return response()->json(['errors' => "Houve um erro ao tentar cadastrar a máquina."], 400);
             }
