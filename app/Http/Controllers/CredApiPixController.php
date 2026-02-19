@@ -107,15 +107,37 @@ class CredApiPixController extends Controller
         try {
             $dados = $request->all();
 
-            return DB::transaction(function () use ($dados, $id) {
+            $caminho = null;
+            // Se um novo certificado foi enviado, processa
+            if(isset($request['caminho_certificado']) && $request->hasFile('caminho_certificado')){
+                $id_cliente = $dados['id_cliente'];
+                $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], "Certificados", $id_cliente);
+    
+                \Log::info($converter_arquivo_p12_para_pem);
+                
+                if($converter_arquivo_p12_para_pem['status'] == 200){
+                    $caminho = $converter_arquivo_p12_para_pem['caminho_certificado'];
+                }else{
+                    return response()->json(['message' => 'Houve um erro ao tentar atualizar o certificado!', 'response' => $converter_arquivo_p12_para_pem], 500);
+                }
+            }
+
+            return DB::transaction(function () use ($dados, $id, $caminho, $request) {
                 $cred = CredApiPix::findOrFail($id);
 
-                $cred->fill([
+                $updateData = [
                     "id_cliente" => $dados['id_cliente'],
                     "client_secret" => Crypt::encryptString($dados['client_secret']),
                     "client_id" => Crypt::encryptString($dados['client_id']),
-                    "caminho_certificado" => Crypt::encryptString($dados['caminho_certificado'])
-                ]);
+                    "tipo_cred" => $dados['tipo_cred']
+                ];
+
+                // Apenas atualiza o certificado se um novo foi enviado
+                if($caminho !== null){
+                    $updateData["caminho_certificado"] = Crypt::encryptString($caminho);
+                }
+
+                $cred->fill($updateData);
                 $cred->save();
 
                 return response()->json(['message' => 'Credencial atualizada com sucesso!', 'response' => $cred], 200);
