@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class CredApiPix extends Model
 {
     protected $table = 'cred_api_pix';
+    protected $primaryKey = 'id_cred_api_pix';
     public $timestamps = false;
     protected $fillable = [
         'id_cliente',
