@@ -149,6 +149,15 @@ class CredApiPixController extends Controller
 
     public function destroy($id)
     {
-        //
+        try {
+            $cred = CredApiPix::find($id);
+            if (!$cred) {
+                return response()->json(["response" => "Credencial não encontrada"], 404);
+            }
+            $cred->delete();
+            return response()->json(['message' => 'Credencial excluída com sucesso.'], 200);
+        } catch (Exception $e) {
+            return response()->json(["response" => "Houve um erro ao tentar excluir a credencial.", "error" => $e->getMessage()], 500);
+        }
     }
 }
