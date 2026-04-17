@@ -94,7 +94,9 @@ class CredApiPixController extends Controller
             // Descriptografar os dados ao retorná-los
             $cred->client_secret = Crypt::decryptString($cred->client_secret);
             $cred->client_id = Crypt::decryptString($cred->client_id);
-            $cred->caminho_certificado = Crypt::decryptString($cred->caminho_certificado);
+            if ($cred->caminho_certificado !== null && $cred->caminho_certificado !== '') {
+                $cred->caminho_certificado = Crypt::decryptString($cred->caminho_certificado);
+            }
 
             return response()->json($cred, 200);
         } catch (Exception $e) {
