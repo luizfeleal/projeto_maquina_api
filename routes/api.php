@@ -64,6 +64,8 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::post('totalTransacaoMaquinaAcumuladoCliente','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachineOfClient');
     Route::apiResource('locais','App\Http\Controllers\LocaisController');
     Route::apiResource('QRCode','App\Http\Controllers\QrController');
+    // POST com multipart: PHP/Laravel costumam não popular arquivos em PUT; o painel envia certificado EFI aqui.
+    Route::post('credApiPix/{id}/atualizar', 'App\Http\Controllers\CredApiPixController@update');
     Route::apiResource('credApiPix','App\Http\Controllers\CredApiPixController');
     Route::post('hardware/status', 'App\Http\Controllers\Hardware\StatusController@atualizarStatus');
     Route::post('hardware/liberarJogada', 'App\Http\Controllers\Hardware\JogadasController@liberarJogada');

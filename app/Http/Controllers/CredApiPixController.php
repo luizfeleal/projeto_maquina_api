@@ -110,10 +110,10 @@ class CredApiPixController extends Controller
             $dados = $request->all();
 
             $caminho = null;
-            // Se um novo certificado foi enviado, processa
-            if(isset($request['caminho_certificado']) && $request->hasFile('caminho_certificado')){
+            // Se um novo certificado foi enviado, processa (POST multipart; PUT com arquivo costuma falhar no PHP)
+            if ($request->hasFile('caminho_certificado')) {
                 $id_cliente = $dados['id_cliente'];
-                $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request['caminho_certificado'], "Certificados", $id_cliente);
+                $converter_arquivo_p12_para_pem = ConversorArquivoService::converterCertificadoEfi($request->file('caminho_certificado'), "Certificados", $id_cliente);
     
                 \Log::info($converter_arquivo_p12_para_pem);
                 
