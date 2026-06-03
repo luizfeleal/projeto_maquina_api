@@ -17,6 +17,13 @@ use Illuminate\Support\Facades\Hash;
 */
 
 Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
+Route::get('health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'service' => config('app.name'),
+        'timestamp' => now()->toISOString(),
+    ]);
+});
 Route::post('tokenefi', 'App\Http\Controllers\Efi\AuthController@auth');
 Route::post('auth/logout', 'App\Http\Controllers\AuthController@logout');
 Route::get('/register', function (Request $request) {
@@ -79,5 +86,4 @@ Route::get('teste', function(){
 });
 Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial');//->middleware('permissionWebhook');
 Route::post('webhook/pagbank', 'App\Http\Controllers\Pagbank\Webhooks\WebhookController@processamentoWebhook');
-
 

@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+vendor
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+.env
+.env.*
+!.env.docker.example
+Dockerfile
+docker-compose*.yml
+docker/grafana/data
+

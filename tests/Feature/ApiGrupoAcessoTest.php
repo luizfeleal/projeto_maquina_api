@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ApiGruposAcessoTest extends TestCase
+class ApiGrupoAcessoTest extends TestCase
 {
 
     public function setUp(): void
