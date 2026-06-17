@@ -62,8 +62,9 @@ class ExtratoMaquinaController extends Controller
         $totalFiltered = $query->count();
 
         // Obter os parâmetros de ordenação
-        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
-        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
+        $order = $request->get('order', [['column' => 4, 'dir' => 'desc']]);
+        $orderColumn = $order[0]['column'] ?? 4;
+        $orderDirection = $order[0]['dir'] ?? 'desc';
 
         // Definir as colunas para ordenar
         $columns = [
@@ -415,124 +416,95 @@ public static function acumulatedPerMachineOfClient(Request $request)
     public function getTheLastTransactionPerMachine(Request $request)
     {
         try {
-            // 1. Recuperar todas as máquinas
-            $machines = DB::table('maquinas')
-                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
-                ->select(
-                    'maquinas.id_maquina',
-                    'maquinas.id_local',
-                    'maquinas.maquina_nome',
-                    'maquinas.maquina_status',
-                    'locais.local_nome',
-                    'maquinas.data_criacao as maquina_data_criacao' // alias para evitar conflito
-                )
-                ->whereNull('maquinas.deleted_at')
+            $result = $this->queryMachinesWithLastTransaction()
                 ->get()
-                ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
+                ->map(fn ($row) => $this->formatMachineLastTransactionRow($row));
 
-            // 2. Recuperar a última transação para cada máquina usando uma subconsulta
-            $lastTransactions = DB::table('extrato_maquina as em')
-                ->select(
-                    'em.id_maquina',
-                    'em.extrato_operacao',
-                    'em.extrato_operacao_valor',
-                    'em.extrato_operacao_tipo',
-                    'em.data_criacao as extrato_data_criacao' // alias para distinguir
-                )
-                ->whereIn('em.id_maquina', $machines->keys())
-                ->whereRaw('em.id_extrato_maquina = (
-                    SELECT MAX(id_extrato_maquina)
-                    FROM extrato_maquina
-                    WHERE id_maquina = em.id_maquina
-                )')
-                ->get()
-                ->keyBy('id_maquina');
-
-            // 3. Montar a resposta com todas as máquinas e suas últimas transações
-            $result = $machines->map(function ($machine) use ($lastTransactions) {
-                $lastTransaction = $lastTransactions->get($machine->id_maquina); // Pegando a última transação ou nulo
-
-                return [
-                    'id_local' => $machine->id_local,
-                    'id_maquina' => $machine->id_maquina,
-                    'local_nome' => $machine->local_nome,
-                    'maquina_nome' => $machine->maquina_nome,
-                    'maquina_status' => $machine->maquina_status,
-                    'extrato_operacao' => $lastTransaction ? $lastTransaction->extrato_operacao : 'N/A',
-                    'extrato_operacao_valor' => $lastTransaction ? $lastTransaction->extrato_operacao_valor : 0,
-                    'extrato_operacao_tipo' => $lastTransaction ? $lastTransaction->extrato_operacao_tipo : 'N/A',
-                    'data_criacao' => $lastTransaction ? $lastTransaction->extrato_data_criacao : null, // agora vem do extrato
-                ];
-            });
-
-            // Responder no formato esperado pelo DataTables
-            return response()->json($result, 200);
-
+            return response()->json($result->values(), 200);
         } catch (Exception $e) {
             return response()->json(['error' => 'Houve um erro ao tentar coletar os dados das máquinas.'], 500);
         }
     }
+
     public function getTheLastTransactionPerMachineOfClient(Request $request)
     {
         try {
             $id_cliente = $request->input('id_cliente');
-            // 1. Recuperar todas as máquinas
-            $machines = DB::table('maquinas')
-            ->join('locais', 'maquinas.id_local', '=', 'locais.id_local') // Juntando máquinas com locais
-            ->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local') // Juntando locais com cliente_local
-            ->where('cliente_local.id_cliente', $id_cliente) 
-                ->select(
-                    'maquinas.id_maquina',
-                    'maquinas.id_local',
-                    'maquinas.maquina_nome',
-                    'maquinas.maquina_status',
-                    'locais.local_nome',
-                    'maquinas.data_criacao'
-                )
-                ->where('maquinas.deleted_at', NULL)
+
+            $result = $this->queryMachinesWithLastTransaction($id_cliente)
                 ->get()
-                ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
-    
-            // 2. Recuperar a última transação para cada máquina usando uma subconsulta
-            $lastTransactions = DB::table('extrato_maquina as em')
-                ->select(
-                    'em.id_maquina',
-                    'em.extrato_operacao',
-                    'em.extrato_operacao_valor',
-                    'em.extrato_operacao_tipo',
-                    'em.data_criacao'
-                )
-                ->join(DB::raw('(SELECT id_maquina, MAX(data_criacao) AS last_transaction_date FROM extrato_maquina GROUP BY id_maquina) as latest'), function ($join) {
-                    $join->on('em.id_maquina', '=', 'latest.id_maquina')
-                         ->on('em.data_criacao', '=', 'latest.last_transaction_date');
-                })
-                ->whereIn('em.id_maquina', $machines->keys())
-                ->get()
-                ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
-    
-            // 3. Montar a resposta com todas as máquinas e suas últimas transações
-            $result = $machines->map(function ($machine) use ($lastTransactions) {
-                $lastTransaction = $lastTransactions->get($machine->id_maquina); // Pegando a última transação ou nulo
-    
-                return [
-                    'id_local' => $machine->id_local,
-                    'id_maquina' => $machine->id_maquina,
-                    'local_nome' => $machine->local_nome,
-                    'maquina_nome' => $machine->maquina_nome,
-                    'maquina_status' => $machine->maquina_status,
-                    'extrato_operacao' => $lastTransaction ? $lastTransaction->extrato_operacao : 'N/A',
-                    'extrato_operacao_valor' => $lastTransaction ? $lastTransaction->extrato_operacao_valor : 0,
-                    'extrato_operacao_tipo' => $lastTransaction ? $lastTransaction->extrato_operacao_tipo : 'N/A',
-                    'data_criacao' => $machine->data_criacao,
-                ];
-            });
-    
-            // Responder no formato esperado pelo DataTables
-            return response()->json($result, 200);
-    
+                ->map(fn ($row) => $this->formatMachineLastTransactionRow($row, useMachineCreationDate: true));
+
+            return response()->json($result->values(), 200);
         } catch (Exception $e) {
             return response()->json(['error' => 'Houve um erro ao tentar coletar os dados das máquinas.'], 500);
         }
+    }
+
+    private function queryMachinesWithLastTransaction(?int $idCliente = null)
+    {
+        $lastTransactionsSub = DB::table('extrato_maquina as em')
+            ->joinSub(
+                DB::table('extrato_maquina')
+                    ->select('id_maquina', DB::raw('MAX(id_extrato_maquina) as max_id'))
+                    ->groupBy('id_maquina'),
+                'latest',
+                function ($join) {
+                    $join->on('em.id_extrato_maquina', '=', 'latest.max_id');
+                }
+            )
+            ->select(
+                'em.id_maquina',
+                'em.extrato_operacao',
+                'em.extrato_operacao_valor',
+                'em.extrato_operacao_tipo',
+                'em.data_criacao as extrato_data_criacao'
+            );
+
+        $query = DB::table('maquinas as m')
+            ->join('locais as l', 'm.id_local', '=', 'l.id_local')
+            ->leftJoinSub($lastTransactionsSub, 'last_em', function ($join) {
+                $join->on('m.id_maquina', '=', 'last_em.id_maquina');
+            })
+            ->whereNull('m.deleted_at')
+            ->select(
+                'm.id_maquina',
+                'm.id_local',
+                'm.maquina_nome',
+                'm.maquina_status',
+                'm.data_criacao as maquina_data_criacao',
+                'l.local_nome',
+                'last_em.extrato_operacao',
+                'last_em.extrato_operacao_valor',
+                'last_em.extrato_operacao_tipo',
+                'last_em.extrato_data_criacao'
+            )
+            ->orderBy('l.local_nome')
+            ->orderBy('m.maquina_nome');
+
+        if ($idCliente !== null) {
+            $query->join('cliente_local as cl', 'l.id_local', '=', 'cl.id_local')
+                ->where('cl.id_cliente', $idCliente);
+        }
+
+        return $query;
+    }
+
+    private function formatMachineLastTransactionRow(object $row, bool $useMachineCreationDate = false): array
+    {
+        return [
+            'id_local' => $row->id_local,
+            'id_maquina' => $row->id_maquina,
+            'local_nome' => $row->local_nome,
+            'maquina_nome' => $row->maquina_nome,
+            'maquina_status' => $row->maquina_status,
+            'extrato_operacao' => $row->extrato_operacao ?? 'N/A',
+            'extrato_operacao_valor' => $row->extrato_operacao_valor ?? 0,
+            'extrato_operacao_tipo' => $row->extrato_operacao_tipo ?? 'N/A',
+            'data_criacao' => $useMachineCreationDate
+                ? ($row->maquina_data_criacao ?? null)
+                : ($row->extrato_data_criacao ?? null),
+        ];
     }
 
     public function indexClient(Request $request)
