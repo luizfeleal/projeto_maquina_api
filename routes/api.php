@@ -50,6 +50,9 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('clientes','App\Http\Controllers\ClientesController');
     Route::apiResource('maquinas','App\Http\Controllers\MaquinasController');
     Route::post('maquinas/atualizar','App\Http\Controllers\MaquinasController@update');
+    Route::post('maquinas/{id_maquina}/reset-parcial', 'App\Http\Controllers\ResetParcialController@store');
+    Route::get('maquinas/{id_maquina}/reset-parcial/ultimo', 'App\Http\Controllers\ResetParcialController@ultimo');
+    Route::get('reset-parcial/historico', 'App\Http\Controllers\ResetParcialController@historico');
     Route::apiResource('maquinasCartao','App\Http\Controllers\MaquinasCartaoController');
     Route::post('maquinasCartaoAtualizar','App\Http\Controllers\MaquinasCartaoController@inactive');
     Route::apiResource('clienteLocal','App\Http\Controllers\ClienteLocalController');

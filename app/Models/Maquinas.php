@@ -21,8 +21,13 @@ class Maquinas extends Model
         'maquina_nome',
         'maquina_status',
         'maquina_ultimo_contato',
+        'maquina_ultima_coleta',
         'bloqueio_jogada_pagbank',
         'bloqueio_jogada_efi'
+    ];
+
+    protected $casts = [
+        'maquina_ultima_coleta' => 'decimal:2',
     ];
 
     public static function rules($id = null)

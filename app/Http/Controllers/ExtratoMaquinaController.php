@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExtratoMaquina;
+use App\Services\MaquinaResetParcialService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -202,16 +203,26 @@ class ExtratoMaquinaController extends Controller
             ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
             ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
             ->select(
+                'maquinas.id_maquina',
                 'locais.local_nome',
                 'maquinas.maquina_nome',
                 'maquinas.id_placa',
                 'maquinas.maquina_status',
+                'maquinas.maquina_ultima_coleta',
+                DB::raw('(SELECT MAX(mrp.created_at) FROM maquina_resets_parciais mrp WHERE mrp.id_maquina = maquinas.id_maquina) as data_ultimo_reset'),
                 DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
             )
-            ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
+            ->groupBy(
+                'maquinas.id_maquina',
+                'locais.local_nome',
+                'maquinas.maquina_nome',
+                'maquinas.id_placa',
+                'maquinas.maquina_status',
+                'maquinas.maquina_ultima_coleta'
+            );
     
         // Filtro de pesquisa
         $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
@@ -254,6 +265,8 @@ class ExtratoMaquinaController extends Controller
         $extrato = $query->offset($request->get('start', 0))
                          ->limit($perPage)
                          ->get();
+
+        $extrato = MaquinaResetParcialService::enrichAcumuladoCollection($extrato);
     
         // Responder no formato esperado pelo DataTables
         return response()->json([
@@ -352,16 +365,26 @@ public static function acumulatedPerMachineOfClient(Request $request)
             ->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local') // Juntando locais com cliente_local
             ->where('cliente_local.id_cliente', $id_cliente)
             ->select(
+                'maquinas.id_maquina',
                 'locais.local_nome',
                 'maquinas.maquina_nome',
                 'maquinas.id_placa',
                 'maquinas.maquina_status',
+                'maquinas.maquina_ultima_coleta',
+                DB::raw('(SELECT MAX(mrp.created_at) FROM maquina_resets_parciais mrp WHERE mrp.id_maquina = maquinas.id_maquina) as data_ultimo_reset'),
                 DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
             )
-            ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
+            ->groupBy(
+                'maquinas.id_maquina',
+                'locais.local_nome',
+                'maquinas.maquina_nome',
+                'maquinas.id_placa',
+                'maquinas.maquina_status',
+                'maquinas.maquina_ultima_coleta'
+            );
 
         // Filtro de pesquisa
         $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
@@ -401,6 +424,8 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $extrato = $query->offset($request->get('start', 0))
                          ->limit($request->get('length', 10))
                          ->get();
+
+        $extrato = MaquinaResetParcialService::enrichAcumuladoCollection($extrato);
 
         // Responder no formato esperado pelo DataTables
         return response()->json([
