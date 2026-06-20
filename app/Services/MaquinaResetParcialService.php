@@ -10,31 +10,99 @@ use Illuminate\Support\Facades\DB;
 
 class MaquinaResetParcialService
 {
+    public static function exprSaldoAssinado(string $alias = 'extrato_maquina'): string
+    {
+        return "CASE
+            WHEN {$alias}.extrato_operacao = 'C' THEN {$alias}.extrato_operacao_valor
+            WHEN {$alias}.extrato_operacao = 'D' THEN -{$alias}.extrato_operacao_valor
+            ELSE {$alias}.extrato_operacao_valor
+        END";
+    }
+
     public static function obterTotalMaquina(int $idMaquina): float
     {
+        $expr = self::exprSaldoAssinado();
+
         $total = DB::table('extrato_maquina')
             ->where('id_maquina', $idMaquina)
-            ->sum('extrato_operacao_valor');
+            ->selectRaw("COALESCE(SUM({$expr}), 0) as total")
+            ->value('total');
 
         return round((float) $total, 2);
+    }
+
+    /**
+     * Soma transações do extrato a partir da data do último reset (exclusive).
+     * Sem reset, considera todo o histórico da máquina.
+     */
+    public static function obterSaldoPeriodo(int $idMaquina, ?string $dataUltimoReset = null): float
+    {
+        $expr = self::exprSaldoAssinado();
+
+        $query = DB::table('extrato_maquina')
+            ->where('id_maquina', $idMaquina);
+
+        if ($dataUltimoReset !== null && $dataUltimoReset !== '') {
+            $query->where('data_criacao', '>', $dataUltimoReset);
+        }
+
+        $saldo = $query->selectRaw("COALESCE(SUM({$expr}), 0) as saldo")
+            ->value('saldo');
+
+        return round((float) $saldo, 2);
+    }
+
+    /**
+     * Versão em memória para mocks/testes.
+     */
+    public static function somarExtrato(array $transacoes, ?string $desde = null): float
+    {
+        $total = 0.0;
+
+        foreach ($transacoes as $tx) {
+            if (!is_array($tx)) {
+                continue;
+            }
+
+            $dataTx = (string) ($tx['data_criacao'] ?? '');
+            if ($desde !== null && $desde !== '' && $dataTx !== '' && $dataTx <= $desde) {
+                continue;
+            }
+
+            $valor = (float) ($tx['extrato_operacao_valor'] ?? 0);
+            $op    = $tx['extrato_operacao'] ?? 'C';
+            $total += ($op === 'D') ? -$valor : $valor;
+        }
+
+        return round($total, 2);
     }
 
     public static function enrichAcumuladoRow(object $row): array
     {
         $data = (array) $row;
         $total = round((float) ($data['total_maquina'] ?? 0), 2);
+        $dataUltimoResetRaw = $data['data_ultimo_reset'] ?? null;
+        $temReset = !empty($dataUltimoResetRaw);
         $ultimaColetaRaw = $data['maquina_ultima_coleta'] ?? null;
-        $temReset = $ultimaColetaRaw !== null;
+        $idMaquina = (int) ($data['id_maquina'] ?? 0);
 
         $data['id_maquina'] = $data['id_maquina'] ?? null;
         $data['ultima_coleta'] = $temReset ? round((float) $ultimaColetaRaw, 2) : null;
         $data['tem_reset'] = $temReset;
-        $data['saldo_periodo'] = $temReset
-            ? round($total - (float) $ultimaColetaRaw, 2)
-            : $total;
 
-        if (isset($data['data_ultimo_reset']) && $data['data_ultimo_reset'] !== null) {
-            $data['data_ultimo_reset'] = self::formatIso8601($data['data_ultimo_reset']);
+        if ($idMaquina > 0) {
+            $data['saldo_periodo'] = self::obterSaldoPeriodo(
+                $idMaquina,
+                $temReset ? (string) $dataUltimoResetRaw : null
+            );
+        } else {
+            $data['saldo_periodo'] = $temReset
+                ? round($total - (float) $ultimaColetaRaw, 2)
+                : $total;
+        }
+
+        if ($dataUltimoResetRaw !== null && $dataUltimoResetRaw !== '') {
+            $data['data_ultimo_reset'] = self::formatIso8601($dataUltimoResetRaw);
         } else {
             $data['data_ultimo_reset'] = null;
         }
@@ -66,6 +134,7 @@ class MaquinaResetParcialService
             }
 
             $total = self::obterTotalMaquina($idMaquina);
+            $agora = now();
 
             $reset = MaquinaResetParcial::create([
                 'id_maquina' => $idMaquina,
@@ -73,7 +142,7 @@ class MaquinaResetParcialService
                 'valor_acumulado_total' => $total,
                 'realizado_por' => (string) $dados['realizado_por'],
                 'observacao' => $dados['observacao'] ?? null,
-                'created_at' => now(),
+                'created_at' => $agora,
             ]);
 
             $maquina->maquina_ultima_coleta = $total;
@@ -149,6 +218,7 @@ class MaquinaResetParcialService
             'realizado_por' => $reset->realizado_por,
             'observacao' => $reset->observacao,
             'created_at' => self::formatIso8601($reset->created_at),
+            'data_ultimo_reset' => self::formatIso8601($reset->created_at),
             'saldo_periodo' => $saldoPeriodo !== null ? round($saldoPeriodo, 2) : null,
         ];
     }

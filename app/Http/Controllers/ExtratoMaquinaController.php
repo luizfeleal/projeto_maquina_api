@@ -193,15 +193,12 @@ class ExtratoMaquinaController extends Controller
     public function acumulatedPerMachine(Request $request)
 {
     try {
-        // Número de registros por página
-        $perPage = $request->get('length', 10); 
-        // Página atual
-        $page = $request->get('start', 0) / $perPage + 1;
-    
-        // Query base com joins e COALESCE para totalizadores
+        $perPage = max((int) $request->get('length', 10), 1);
+
         $query = DB::table('maquinas')
             ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
             ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->whereNull('maquinas.deleted_at')
             ->select(
                 'maquinas.id_maquina',
                 'locais.local_nome',
@@ -223,56 +220,54 @@ class ExtratoMaquinaController extends Controller
                 'maquinas.maquina_status',
                 'maquinas.maquina_ultima_coleta'
             );
-    
-        // Filtro de pesquisa
-        $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
+
+        if ($idCliente = $request->input('id_cliente')) {
+            $query->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
+                ->where('cliente_local.id_cliente', $idCliente);
+        }
+
+        $search = $request->input('search.value') ?? $request->input('search_value');
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                // Adicione aqui as colunas que podem ser pesquisadas
-                $q->where('locais.local_nome', 'like', "%$search%")
-                  ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
-                  ->orWhere('maquinas.id_placa', 'like', "%$search%")
-                  ->orWhere('maquinas.maquina_status', 'like', "%$search%");
+                $q->where('locais.local_nome', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_nome', 'like', "%{$search}%")
+                  ->orWhere('maquinas.id_placa', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_status', 'like', "%{$search}%");
             });
         }
-    
-        // Obter os parâmetros de ordenação
-        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
-        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
 
-        // Definir as colunas para ordenar
+        $order = $request->get('order', [['column' => 4, 'dir' => 'desc']]);
+        $orderColumn = $order[0]['column'] ?? 4;
+        $orderDirection = $order[0]['dir'] ?? 'desc';
+
         $columns = [
-            'locais.local_nome',            // Coluna 0
-            'maquinas.maquina_nome',         // Coluna 1
-            'maquinas.id_placa',             // Coluna 2
-            'maquinas.maquina_status',       // Coluna 3
-            'total_maquina',                 // Coluna 4
-            'total_pix',                     // Coluna 5
-            'total_cartao',                  // Coluna 6
-            'total_dinheiro'                 // Coluna 7
+            'locais.local_nome',
+            'maquinas.maquina_nome',
+            'maquinas.id_placa',
+            'maquinas.maquina_status',
+            'total_maquina',
+            'total_pix',
+            'total_cartao',
+            'total_dinheiro',
         ];
 
-        // Aplicar ordenação na consulta
-        $query->orderBy($columns[$orderColumn], $orderDirection);
-    
-        // Total de registros sem filtro
-        $totalRecords = DB::table('maquinas')->count();
-    
-        // Total de registros filtrados
-        $totalFiltered = $query->count();
-    
-        // Paginar os dados
-        $extrato = $query->offset($request->get('start', 0))
+        if (isset($columns[$orderColumn])) {
+            $query->orderBy($columns[$orderColumn], $orderDirection);
+        }
+
+        $totalRecords = DB::table('maquinas')->whereNull('deleted_at')->count();
+        $totalFiltered = DB::query()->fromSub($query, 'acumulado')->count();
+
+        $extrato = $query->offset((int) $request->get('start', 0))
                          ->limit($perPage)
                          ->get();
 
         $extrato = MaquinaResetParcialService::enrichAcumuladoCollection($extrato);
-    
-        // Responder no formato esperado pelo DataTables
+
         return response()->json([
             'data' => $extrato,
-            'recordsTotal' => count($extrato), // Total de registros sem filtro
-            'recordsFiltered' => count($extrato) // Total de registros após o filtro
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalFiltered,
         ], 200);
     } catch (Exception $e) {
         return response()->json([
@@ -387,35 +382,34 @@ public static function acumulatedPerMachineOfClient(Request $request)
             );
 
         // Filtro de pesquisa
-        $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
+        $search = $request->input('search.value') ?? $request->input('search_value');
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                // Adicione aqui as colunas que podem ser pesquisadas
-                $q->where('locais.local_nome', 'like', "%$search%")
-                  ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
-                  ->orWhere('maquinas.id_placa', 'like', "%$search%")
-                  ->orWhere('maquinas.maquina_status', 'like', "%$search%");
+                $q->where('locais.local_nome', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_nome', 'like', "%{$search}%")
+                  ->orWhere('maquinas.id_placa', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_status', 'like', "%{$search}%");
             });
         }
 
-        // Obter os parâmetros de ordenação
-        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
-        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
+        $order = $request->get('order', [['column' => 4, 'dir' => 'desc']]);
+        $orderColumn = $order[0]['column'] ?? 4;
+        $orderDirection = $order[0]['dir'] ?? 'desc';
 
-        // Definir as colunas para ordenar
         $columns = [
-            'locais.local_nome',            // Coluna 0
-            'maquinas.maquina_nome',         // Coluna 1
-            'maquinas.id_placa',             // Coluna 2
-            'maquinas.maquina_status',       // Coluna 3
-            'total_maquina',                 // Coluna 4
-            'total_pix',                     // Coluna 5
-            'total_cartao',                  // Coluna 6
-            'total_dinheiro'                 // Coluna 7
+            'locais.local_nome',
+            'maquinas.maquina_nome',
+            'maquinas.id_placa',
+            'maquinas.maquina_status',
+            'total_maquina',
+            'total_pix',
+            'total_cartao',
+            'total_dinheiro',
         ];
 
-        // Aplicar ordenação na consulta
-        $query->orderBy($columns[$orderColumn], $orderDirection);
+        if (isset($columns[$orderColumn])) {
+            $query->orderBy($columns[$orderColumn], $orderDirection);
+        }
 
         // Total de registros para a contagem
         $totalRecords = DB::table('maquinas')->count();

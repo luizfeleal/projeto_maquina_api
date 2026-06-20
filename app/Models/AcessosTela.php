@@ -12,7 +12,8 @@ class AcessosTela extends Model
     protected $fillable = [
         'id_grupo_acesso',
         'acesso_tela_viewname',
-        'acesso_tela_nome'
+        'acesso_tela_nome',
+        'ativo',
     ];
 
     public static function rules($id = null)
