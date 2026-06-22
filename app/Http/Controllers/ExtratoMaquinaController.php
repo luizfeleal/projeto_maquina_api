@@ -30,20 +30,24 @@ class ExtratoMaquinaController extends Controller
         ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
         ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
         ->select(
+            'maquinas.id_maquina',
             'locais.local_nome',
             'maquinas.maquina_nome',
             'extrato_maquina.extrato_operacao',
             'extrato_maquina.extrato_operacao_valor',
             'extrato_maquina.extrato_operacao_tipo',
-            DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%d/%m/%Y %H:%i') as data_criacao") // Formatando a data
-        )
-        ->orderBy('extrato_maquina.data_criacao', 'desc'); // Ordenação padrão
+            DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%d/%m/%Y %H:%i') as data_criacao")
+        );
+
+        $this->aplicarFiltroDataExtrato($query, $request);
 
         // Filtro de pesquisa
-        $search = $request->get('search'); // Valor da pesquisa do DataTables
+        $search = $request->input('search.value') ?? $request->input('search');
+        if (is_array($search)) {
+            $search = $search['value'] ?? null;
+        }
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                // Adicione aqui as colunas que podem ser pesquisadas
                 $q->where('locais.local_nome', 'like', "%$search%")
                   ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
                   ->orWhere('extrato_maquina.extrato_operacao', 'like', "%$search%")
@@ -60,7 +64,7 @@ class ExtratoMaquinaController extends Controller
             ->count();
 
         // Total de registros filtrados
-        $totalFiltered = $query->count();
+        $totalFiltered = (clone $query)->count();
 
         // Obter os parâmetros de ordenação
         $order = $request->get('order', [['column' => 4, 'dir' => 'desc']]);
@@ -1057,5 +1061,24 @@ public static function acumulatedPerMachineOfClient(Request $request)
         ];
     
         return response()->json($result, 200);
+    }
+
+    /**
+     * Aplica filtro de intervalo de datas em consultas de extrato_maquina.
+     */
+    private function aplicarFiltroDataExtrato($query, Request $request): void
+    {
+        $dataInicio = $request->input('data_inicio');
+        $dataFim    = $request->input('data_fim');
+
+        if ($dataInicio) {
+            $inicio = Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
+            $query->where('extrato_maquina.data_criacao', '>=', $inicio);
+        }
+
+        if ($dataFim) {
+            $fim = Carbon::createFromFormat('Y-m-d', $dataFim)->endOfDay()->format('Y-m-d H:i:s');
+            $query->where('extrato_maquina.data_criacao', '<=', $fim);
+        }
     }
 }
