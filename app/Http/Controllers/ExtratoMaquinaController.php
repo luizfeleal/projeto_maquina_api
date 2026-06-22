@@ -1099,10 +1099,16 @@ public static function acumulatedPerMachineOfClient(Request $request)
         }
 
         match ($tipo) {
-            'pix' => $query->where('extrato_maquina.extrato_operacao_tipo', 'PIX'),
-            'cartao', 'cartão' => $query->where('extrato_maquina.extrato_operacao_tipo', 'Cartão'),
-            'dinheiro' => $query->where('extrato_maquina.extrato_operacao_tipo', 'Dinheiro'),
-            default => $query->where('extrato_maquina.extrato_operacao_tipo', $request->input('tipo_operacao') ?? $request->input('tipo_transacao')),
+            'pix' => $query->whereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) LIKE ?', ['%pix%']),
+            'cartao', 'cartão' => $query->whereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) LIKE ?', ['%cart%']),
+            'dinheiro' => $query->where(function ($q) {
+                $q->whereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) LIKE ?', ['%dinheir%'])
+                  ->orWhereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) LIKE ?', ['%fisic%']);
+            }),
+            default => $query->where(
+                'extrato_maquina.extrato_operacao_tipo',
+                $request->input('tipo_operacao') ?? $request->input('tipo_transacao')
+            ),
         };
     }
 }
