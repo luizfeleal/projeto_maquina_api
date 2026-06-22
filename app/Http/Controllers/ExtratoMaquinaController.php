@@ -40,6 +40,7 @@ class ExtratoMaquinaController extends Controller
         );
 
         $this->aplicarFiltroDataExtrato($query, $request);
+        $this->aplicarFiltroTipoOperacao($query, $request);
 
         // Filtro de pesquisa
         $search = $request->input('search.value') ?? $request->input('search');
@@ -1080,5 +1081,28 @@ public static function acumulatedPerMachineOfClient(Request $request)
             $fim = Carbon::createFromFormat('Y-m-d', $dataFim)->endOfDay()->format('Y-m-d H:i:s');
             $query->where('extrato_maquina.data_criacao', '<=', $fim);
         }
+    }
+
+    /**
+     * Filtra extrato pelo tipo de operação (PIX, Cartão, Dinheiro).
+     */
+    private function aplicarFiltroTipoOperacao($query, Request $request): void
+    {
+        $tipo = strtolower(trim((string) (
+            $request->input('tipo_operacao')
+            ?? $request->input('tipo_transacao')
+            ?? ''
+        )));
+
+        if ($tipo === '') {
+            return;
+        }
+
+        match ($tipo) {
+            'pix' => $query->where('extrato_maquina.extrato_operacao_tipo', 'PIX'),
+            'cartao', 'cartão' => $query->where('extrato_maquina.extrato_operacao_tipo', 'Cartão'),
+            'dinheiro' => $query->where('extrato_maquina.extrato_operacao_tipo', 'Dinheiro'),
+            default => $query->where('extrato_maquina.extrato_operacao_tipo', $request->input('tipo_operacao') ?? $request->input('tipo_transacao')),
+        };
     }
 }
