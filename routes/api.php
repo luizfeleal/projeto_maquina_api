@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Hash;
 |
 */
 
+// Rota pública para Landing Page institucional
+Route::get('vendas', 'App\Http\Controllers\VendasController@index');
+
 Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
 Route::get('health', function () {
     return response()->json([
@@ -78,8 +81,25 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::post('credApiPix/{id}/atualizar', 'App\Http\Controllers\CredApiPixController@update');
     Route::apiResource('credApiPix','App\Http\Controllers\CredApiPixController');
     Route::post('hardware/status', 'App\Http\Controllers\Hardware\StatusController@atualizarStatus');
-    Route::post('hardware/liberarJogada', 'App\Http\Controllers\Hardware\JogadasController@liberarJogada');
+    Route::post('hardware/liberarJogada', 'App\Http\Controllers\Hardware\JogadasController@liberarJogada')->middleware('checkInadimplencia');
     Route::post('hardware/maquinasDisponiveis', 'App\Http\Controllers\Hardware\MaquinasController@listarMaquinasDisponiveisParaRegistro');
+
+    // Módulo Financeiro
+    Route::apiResource('financeiro/despesas', 'App\Http\Controllers\DespesaController');
+    Route::apiResource('financeiro/mensalidades', 'App\Http\Controllers\MensalidadeController');
+    Route::get('financeiro/mensalidades/{id}/boleto', 'App\Http\Controllers\MensalidadeController@boleto');
+    Route::post('financeiro/mensalidades/{id}/boleto/gerar', 'App\Http\Controllers\MensalidadeController@gerarBoleto');
+    Route::post('financeiro/mensalidades/{id}/boleto/cancelar', 'App\Http\Controllers\MensalidadeController@cancelarBoleto');
+    Route::post('financeiro/mensalidades/{id}/boleto/reenviar', 'App\Http\Controllers\MensalidadeController@reenviarBoleto');
+    Route::apiResource('financeiro/estoquePlacas', 'App\Http\Controllers\EstoquePlacaController');
+    Route::apiResource('financeiro/historicoResets', 'App\Http\Controllers\HistoricoResetController');
+    Route::get('financeiro/estoquePlacas/{id}/comprovante', 'App\Http\Controllers\PdfController@comprovanteVendaPlaca');
+
+    // Dashboard de Desempenho (Gráficos)
+    Route::get('dashboard/desempenho', 'App\Http\Controllers\DashboardController@desempenho');
+
+    // Reset de Aferição de Máquina
+    Route::post('maquinas/{id}/reset-afericao', 'App\Http\Controllers\ResetAfericaoController@reset');
 });
 
 //Route::post('webhook/efi', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamento');
@@ -88,5 +108,6 @@ Route::get('teste', function(){
     return 'cheguei';
 });
 Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial');//->middleware('permissionWebhook');
+Route::post('webhook/efi/boleto', 'App\Http\Controllers\Efi\Webhooks\BoletoWebhookController@handle');
 Route::post('webhook/pagbank', 'App\Http\Controllers\Pagbank\Webhooks\WebhookController@processamentoWebhook');
 

@@ -22,13 +22,28 @@ class Maquinas extends Model
         'maquina_status',
         'maquina_ultimo_contato',
         'maquina_ultima_coleta',
+        'ultimo_valor_reset',
         'bloqueio_jogada_pagbank',
         'bloqueio_jogada_efi'
     ];
 
+    protected $appends = ['saldo_afericao'];
+
     protected $casts = [
         'maquina_ultima_coleta' => 'decimal:2',
+        'ultimo_valor_reset'    => 'decimal:2',
+        'bloqueio_jogada_efi'   => 'boolean',
+        'bloqueio_jogada_pagbank' => 'boolean',
     ];
+
+    public function getSaldoAfericaoAttribute(): float
+    {
+        $totalAcumulado = \Illuminate\Support\Facades\DB::table('extrato_maquina')
+            ->where('id_maquina', $this->id_maquina)
+            ->sum('extrato_operacao_valor');
+
+        return round((float) $totalAcumulado - (float) $this->ultimo_valor_reset, 2);
+    }
 
     public static function rules($id = null)
      {

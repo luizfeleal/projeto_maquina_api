@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'apiJwt' => \App\Http\Middleware\ProtectedRouteJwt::class,
         'permissionWebhook'=> \App\Http\Middleware\ChecarPermissoesWebhook::class,
+        'checkInadimplencia' => \App\Http\Middleware\CheckInadimplencia::class,
     ];
 }

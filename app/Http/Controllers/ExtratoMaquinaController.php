@@ -211,6 +211,9 @@ class ExtratoMaquinaController extends Controller
                 'maquinas.id_placa',
                 'maquinas.maquina_status',
                 'maquinas.maquina_ultima_coleta',
+                'maquinas.maquina_ultimo_contato',
+                'maquinas.bloqueio_jogada_efi',
+                'maquinas.bloqueio_jogada_pagbank',
                 DB::raw('(SELECT MAX(mrp.created_at) FROM maquina_resets_parciais mrp WHERE mrp.id_maquina = maquinas.id_maquina) as data_ultimo_reset'),
                 DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
@@ -223,7 +226,10 @@ class ExtratoMaquinaController extends Controller
                 'maquinas.maquina_nome',
                 'maquinas.id_placa',
                 'maquinas.maquina_status',
-                'maquinas.maquina_ultima_coleta'
+                'maquinas.maquina_ultima_coleta',
+                'maquinas.maquina_ultimo_contato',
+                'maquinas.bloqueio_jogada_efi',
+                'maquinas.bloqueio_jogada_pagbank'
             );
 
         if ($idCliente = $request->input('id_cliente')) {
@@ -268,6 +274,8 @@ class ExtratoMaquinaController extends Controller
                          ->get();
 
         $extrato = MaquinaResetParcialService::enrichAcumuladoCollection($extrato);
+
+        $extrato = $extrato->map(fn ($item) => $this->appendStatusComunicacao($item));
 
         return response()->json([
             'data' => $extrato,
@@ -371,6 +379,9 @@ public static function acumulatedPerMachineOfClient(Request $request)
                 'maquinas.id_placa',
                 'maquinas.maquina_status',
                 'maquinas.maquina_ultima_coleta',
+                'maquinas.maquina_ultimo_contato',
+                'maquinas.bloqueio_jogada_efi',
+                'maquinas.bloqueio_jogada_pagbank',
                 DB::raw('(SELECT MAX(mrp.created_at) FROM maquina_resets_parciais mrp WHERE mrp.id_maquina = maquinas.id_maquina) as data_ultimo_reset'),
                 DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
@@ -383,7 +394,10 @@ public static function acumulatedPerMachineOfClient(Request $request)
                 'maquinas.maquina_nome',
                 'maquinas.id_placa',
                 'maquinas.maquina_status',
-                'maquinas.maquina_ultima_coleta'
+                'maquinas.maquina_ultima_coleta',
+                'maquinas.maquina_ultimo_contato',
+                'maquinas.bloqueio_jogada_efi',
+                'maquinas.bloqueio_jogada_pagbank'
             );
 
         // Filtro de pesquisa
@@ -426,11 +440,13 @@ public static function acumulatedPerMachineOfClient(Request $request)
 
         $extrato = MaquinaResetParcialService::enrichAcumuladoCollection($extrato);
 
+        $extrato = $extrato->map(fn ($item) => $this->appendStatusComunicacao($item));
+
         // Responder no formato esperado pelo DataTables
         return response()->json([
             'data' => $extrato,
             'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $totalRecords // Total de registros filtrados será igual ao total de registros
+            'recordsFiltered' => $totalRecords
         ], 200);
     } catch (Exception $e) {
         return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
@@ -1081,6 +1097,27 @@ public static function acumulatedPerMachineOfClient(Request $request)
             $fim = Carbon::createFromFormat('Y-m-d', $dataFim)->endOfDay()->format('Y-m-d H:i:s');
             $query->where('extrato_maquina.data_criacao', '<=', $fim);
         }
+    }
+
+    /**
+     * Adiciona status_comunicacao, status_pix e status_cartao ao item do acumulado.
+     * - status_comunicacao: true se a máquina se conectou nos últimos 15 minutos
+     * - status_pix:         true se bloqueio_jogada_efi == false
+     * - status_cartao:      true se bloqueio_jogada_pagbank == false
+     */
+    private function appendStatusComunicacao(mixed $item): mixed
+    {
+        $arr = (array) $item;
+
+        $ultimoContato = $arr['maquina_ultimo_contato'] ?? null;
+        $arr['status_comunicacao'] = $ultimoContato
+            ? Carbon::parse($ultimoContato)->diffInMinutes(Carbon::now()) <= 15
+            : false;
+
+        $arr['status_pix']    = !(bool) ($arr['bloqueio_jogada_efi']     ?? false);
+        $arr['status_cartao'] = !(bool) ($arr['bloqueio_jogada_pagbank'] ?? false);
+
+        return $arr;
     }
 
     /**

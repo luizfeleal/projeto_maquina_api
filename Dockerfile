@@ -35,6 +35,9 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-s
 
 COPY . .
 COPY docker/php/entrypoint.sh /usr/local/bin/laravel-entrypoint
+COPY docker/php/99-tempdir.ini /usr/local/etc/php/conf.d/99-tempdir.ini
+COPY docker/php/99-production.ini /usr/local/etc/php/conf.d/99-production.ini
+COPY docker/php/zz-fpm-env.conf /usr/local/etc/php-fpm.d/zz-fpm-env.conf
 
 RUN chmod +x /usr/local/bin/laravel-entrypoint \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \

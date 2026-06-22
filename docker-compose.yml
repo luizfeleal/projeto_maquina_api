@@ -10,9 +10,15 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      TMPDIR: /var/www/html/storage/framework/cache
+      TEMP: /var/www/html/storage/framework/cache
+      TMP: /var/www/html/storage/framework/cache
     volumes:
       - ./:/var/www/html
       - vendor:/var/www/html/vendor
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - app
 
@@ -37,6 +43,10 @@ services:
       - app
     env_file:
       - .env
+    environment:
+      TMPDIR: /var/www/html/storage/framework/cache
+      TEMP: /var/www/html/storage/framework/cache
+      TMP: /var/www/html/storage/framework/cache
     command: ["php", "artisan", "schedule:work"]
     volumes:
       - ./:/var/www/html
