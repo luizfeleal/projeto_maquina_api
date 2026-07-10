@@ -80,14 +80,46 @@ class QrCodeService
 
     public function setNomeTitularConta($nomeTitularConta)
     {
-        $this->nomeTitularConta = (string)$nomeTitularConta;
+        $this->nomeTitularConta = $this->removerAcentos((string)$nomeTitularConta);
         return $this;
     }
 
     public function setNomeCidadeTitularConta($nomeCidadeTitularConta)
     {
-        $this->nomeCidadeTitularConta = (string)$nomeCidadeTitularConta;
+        $this->nomeCidadeTitularConta = $this->removerAcentos((string)$nomeCidadeTitularConta);
         return $this;
+    }
+
+    /**
+     * Remove acentos e caracteres especiais e converte para maiúsculas.
+     * Evita divergência de contagem de bytes (UTF-8) em campos exibidos
+     * por leitores/validadores de Pix que não tratam multibyte corretamente.
+     *
+     * Não usa iconv('...//TRANSLIT') propositalmente: o resultado do TRANSLIT
+     * depende da libc/locale do servidor (ex.: no macOS "ã" virou "~a"), o que
+     * reintroduziria o mesmo tipo de inconsistência que este método existe para evitar.
+     */
+    private function removerAcentos(string $valor): string
+    {
+        $mapa = [
+            'á' => 'a', 'à' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ó' => 'o', 'ò' => 'o', 'ô' => 'o', 'õ' => 'o', 'ö' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ç' => 'c', 'ñ' => 'n', 'ý' => 'y',
+            'Á' => 'A', 'À' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A',
+            'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
+            'Í' => 'I', 'Ì' => 'I', 'Î' => 'I', 'Ï' => 'I',
+            'Ó' => 'O', 'Ò' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O',
+            'Ú' => 'U', 'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U',
+            'Ç' => 'C', 'Ñ' => 'N', 'Ý' => 'Y',
+        ];
+
+        $semAcento = strtr($valor, $mapa);
+        $semAcento = preg_replace('/[^A-Za-z0-9 ]/', '', $semAcento);
+
+        return strtoupper(trim($semAcento));
     }
 
     public function setTxid($txid)
@@ -149,6 +181,18 @@ class QrCodeService
         return self::ID_CRC16 . '04' . strtoupper(dechex($resultado));
     }
 
+    /**
+     * Confere se o CRC de um payload já finalizado (com o campo 63 no final)
+     * confere com o que seria recalculado a partir do restante do conteúdo.
+     */
+    private function crcValido(string $payloadCompleto): bool
+    {
+        $payloadSemCrc = substr($payloadCompleto, 0, -8);
+        $crcInformado = substr($payloadCompleto, -8);
+
+        return $this->getCRC16($payloadSemCrc) === $crcInformado;
+    }
+
     public function getInformacaoTitularConta()
     {
         $gui = $this->getValor(self::ID_MERCHANT_ACCOUNT_INFORMATION_GUI, 'br.gov.bcb.pix');
@@ -179,7 +223,14 @@ class QrCodeService
         $this->getCampoAdicionalTemplate();
 
     // Retorna o payload completo com o CRC16
-    return $payload . $this->getCRC16($payload);
+    $payloadFinal = $payload . $this->getCRC16($payload);
+
+    if (!$this->crcValido($payloadFinal)) {
+        \Log::error('Payload Pix gerado com CRC inválido', ['payload' => $payloadFinal]);
+        throw new \RuntimeException('Falha ao gerar payload Pix: CRC inconsistente.');
+    }
+
+    return $payloadFinal;
 }
 
 
