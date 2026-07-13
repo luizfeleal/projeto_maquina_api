@@ -130,27 +130,35 @@ public static function removerMaquina($token, $id)
     }
 
 	public static function coletarMaquinasAtivas($token){
-        $url = env('URL_HARDWARE') . "/validated-devices";
+        try{
+            $url = env('URL_HARDWARE') . "/validated-devices";
 
-        // Inicializa a sessão cURL
-        $ch = curl_init($url);
+            // Inicializa a sessão cURL
+            $ch = curl_init($url);
 
-        curl_setopt_array(
-            $ch,
-            array(
-                CURLOPT_CUSTOMREQUEST => 'GET',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token],
-            )
-        );
+            curl_setopt_array(
+                $ch,
+                array(
+                    CURLOPT_CUSTOMREQUEST => 'GET',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token],
+                )
+            );
 
-        $result = curl_exec($ch);
+            $result = curl_exec($ch);
 
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-        curl_close($ch);
+            if (curl_errno($ch)) {
+                throw new \Exception("Erro durante a requisição cURL: " . curl_error($ch));
+            }
+            curl_close($ch);
 
-        return json_decode($result);
+            return ["http_code" => $httpcode, "resposta" => json_decode($result)];
+        }catch(\Exception $e){
+            \Log::error('Erro em coletarMaquinasAtivas: ' . $e->getMessage());
+            return ["http_code" => 0, "resposta" => null];
+        }
     }
     public static function coletarTransaçõesMaquina($token){
         //LogsService::criar(array("id_usuario"=>session()->get('id_usuario'), "tabela"=>"tipo_endereco", "funcao"=>"coletar", "datahora"=>now()));
@@ -183,13 +191,14 @@ public static function removerMaquina($token, $id)
     
     
                 $resposta = ["http_code"=> $httpcode, "resposta" => json_decode($result)];
-    
+
                 return $resposta;
             }catch(\Exception $e){
-                return $e;
+                \Log::error('Erro em coletarTransaçõesMaquina: ' . $e->getMessage());
+                return ["http_code" => 0, "resposta" => null];
             }
     }
-    
+
     public static function limparTransaçõesMaquinaAposColeta($token){
         try{
             $url = env('URL_HARDWARE') . "/confirm-transaction-log";

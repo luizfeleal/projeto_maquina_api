@@ -39,7 +39,7 @@ class GetTransactionsMachine extends Command
         try {
             $token = AuthService::coletarToken();
             $transacoes = MaquinasService::coletarTransaçõesMaquina($token);
-            if($transacoes['http_code'] == 200){
+            if(is_array($transacoes) && ($transacoes['http_code'] ?? null) == 200){
 
                 $transacoes = $transacoes['resposta'];
                 $maquinas = Maquinas::all()->keyBy('id_placa');

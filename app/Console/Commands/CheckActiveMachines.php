@@ -32,9 +32,16 @@ class CheckActiveMachines extends Command
     public function handle()
     {
 	$token = AuthService::coletarToken();
-        $placasAtivas = MaquinasService::coletarMaquinasAtivas($token);
+        $resultado = MaquinasService::coletarMaquinasAtivas($token);
+        $placasAtivas = $resultado['resposta'] ?? null;
+
+        if (empty($placasAtivas) || !is_iterable($placasAtivas)) {
+            \Log::warning('Nenhuma máquina ativa retornada pela API de hardware.', ['resultado' => $resultado]);
+            $this->warn('Nenhuma máquina ativa retornada pela API de hardware.');
+            return Command::SUCCESS;
+        }
+
         $maquinas = Maquinas::query()->update(['maquina_status' => 0]);
-	//\Log::info('Placas ativas:', ['placas' => $placasAtivas]);
     foreach ($placasAtivas as $machineData) {
         // Encontre a máquina pelo id_placa
             // Acessa o objeto correto

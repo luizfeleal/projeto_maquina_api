@@ -24,7 +24,7 @@ class AuthService
                 // Handle the error if the file is not accessible
                 throw new \Exception("Unable to access the token file.");
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(['message' => 'Houve um erro ao tentar ler o arquivo: ' . $e->getMessage()], 500);
         }
     }
