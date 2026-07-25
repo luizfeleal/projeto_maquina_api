@@ -71,6 +71,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
 
     // Módulo Financeiro
     Route::apiResource('financeiro/despesas', 'App\Http\Controllers\DespesaController');
+    Route::get('financeiro/mensalidades-resumo', 'App\Http\Controllers\MensalidadeController@resumo');
     Route::apiResource('financeiro/mensalidades', 'App\Http\Controllers\MensalidadeController');
     Route::get('financeiro/mensalidades/{id}/boleto', 'App\Http\Controllers\MensalidadeController@boleto');
     Route::post('financeiro/mensalidades/{id}/boleto/gerar', 'App\Http\Controllers\MensalidadeController@gerarBoleto');

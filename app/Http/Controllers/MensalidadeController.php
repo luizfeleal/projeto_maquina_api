@@ -42,6 +42,44 @@ class MensalidadeController extends Controller
         }
     }
 
+    public function resumo(Request $request)
+    {
+        try {
+            $query = Mensalidade::query();
+
+            if ($request->filled('id_cliente')) {
+                $query->where('id_cliente', $request->id_cliente);
+            }
+
+            if ($request->filled('vencimento_inicio')) {
+                $query->whereDate('vencimento', '>=', $request->vencimento_inicio);
+            }
+
+            if ($request->filled('vencimento_fim')) {
+                $query->whereDate('vencimento', '<=', $request->vencimento_fim);
+            }
+
+            $porStatus = (clone $query)
+                ->selectRaw('status, COUNT(*) as total, SUM(valor) as valor_total')
+                ->groupBy('status')
+                ->get()
+                ->keyBy('status');
+
+            $resumo = [];
+            foreach (['pago', 'pendente', 'atrasado'] as $status) {
+                $linha = $porStatus->get($status);
+                $resumo[$status] = [
+                    'total'       => (int) ($linha->total ?? 0),
+                    'valor_total' => round((float) ($linha->valor_total ?? 0), 2),
+                ];
+            }
+
+            return response()->json($resumo, 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Houve um erro ao gerar o resumo das mensalidades.'], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
