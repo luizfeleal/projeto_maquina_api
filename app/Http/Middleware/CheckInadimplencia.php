@@ -8,6 +8,8 @@ use App\Models\Maquinas;
 use App\Models\Locais;
 use App\Models\Mensalidade;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Log;
 
 class CheckInadimplencia
 {
@@ -34,10 +36,19 @@ class CheckInadimplencia
         $diasTolerancia = (int) env('INADIMPLENCIA_DIAS', 5);
         $limiteVencimento = Carbon::today()->subDays($diasTolerancia);
 
-        $inadimplente = Mensalidade::where('id_cliente', $local->id_cliente)
-            ->where('status', '!=', 'pago')
-            ->whereDate('vencimento', '<=', $limiteVencimento)
-            ->exists();
+        try {
+            $inadimplente = Mensalidade::where('id_cliente', $local->id_cliente)
+                ->where('status', '!=', 'pago')
+                ->whereDate('vencimento', '<=', $limiteVencimento)
+                ->exists();
+        } catch (QueryException $e) {
+            Log::warning('[CheckInadimplencia] Banco indisponível; verificação de mensalidades ignorada.', [
+                'id_cliente' => $local->id_cliente,
+                'erro'       => $e->getMessage(),
+            ]);
+
+            return $next($request);
+        }
 
         if ($inadimplente) {
             return response()->json([

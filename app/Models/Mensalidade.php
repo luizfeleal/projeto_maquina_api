@@ -18,11 +18,17 @@ class Mensalidade extends Model
         'boleto_link',
         'boleto_pdf',
         'boleto_status',
+        'alerta_5_enviado_em',
+        'alerta_3_enviado_em',
+        'alerta_0_enviado_em',
     ];
 
     protected $casts = [
-        'valor'      => 'decimal:2',
-        'vencimento' => 'date',
+        'valor'                => 'decimal:2',
+        'vencimento'           => 'date',
+        'alerta_5_enviado_em'  => 'date',
+        'alerta_3_enviado_em'  => 'date',
+        'alerta_0_enviado_em'  => 'date',
     ];
 
     public static function rules(): array

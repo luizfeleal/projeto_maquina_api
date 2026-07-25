@@ -52,48 +52,50 @@ class MensalidadeController extends Controller
                 return response()->json(['errors' => $validator->errors()], 400);
             }
 
-            return DB::transaction(function () use ($dados, $request) {
+            $mensalidade = DB::transaction(function () use ($dados) {
                 $mensalidade = new Mensalidade();
                 $mensalidade->fill($dados);
                 $mensalidade->save();
 
-                $gerarBoleto = filter_var($request->input('gerar_boleto', true), FILTER_VALIDATE_BOOLEAN);
+                return $mensalidade;
+            });
 
-                if ($gerarBoleto) {
-                    $cliente = Clientes::find($dados['id_cliente']);
+            $gerarBoleto = filter_var($request->input('gerar_boleto', true), FILTER_VALIDATE_BOOLEAN);
 
-                    if ($cliente) {
-                        try {
-                            $boleto = BoletoService::criarBoleto($mensalidade, $cliente);
+            if ($gerarBoleto) {
+                $cliente = Clientes::find($dados['id_cliente']);
 
-                            $mensalidade->update([
-                                'efi_charge_id' => $boleto['chargeId'],
-                                'boleto_barcode' => $boleto['barcode'],
-                                'boleto_link'    => $boleto['link'],
-                                'boleto_pdf'     => $boleto['pdf'],
-                                'boleto_status'  => $boleto['status'],
-                            ]);
-                        } catch (EfiException $e) {
-                            Log::error('Efi boleto creation failed', [
-                                'mensalidade_id' => $mensalidade->id,
-                                'code'           => $e->code,
-                                'error'          => $e->error,
-                                'description'    => $e->errorDescription,
-                            ]);
-                        } catch (\Exception $e) {
-                            Log::error('Boleto creation unexpected error', [
-                                'mensalidade_id' => $mensalidade->id,
-                                'message'        => $e->getMessage(),
-                            ]);
-                        }
+                if ($cliente) {
+                    try {
+                        $boleto = BoletoService::criarBoleto($mensalidade, $cliente);
+
+                        $mensalidade->update([
+                            'efi_charge_id' => $boleto['chargeId'],
+                            'boleto_barcode' => $boleto['barcode'],
+                            'boleto_link'    => $boleto['link'],
+                            'boleto_pdf'     => $boleto['pdf'],
+                            'boleto_status'  => $boleto['status'],
+                        ]);
+                    } catch (EfiException $e) {
+                        Log::error('Efi boleto creation failed', [
+                            'mensalidade_id' => $mensalidade->id,
+                            'code'           => $e->code,
+                            'error'          => $e->error,
+                            'description'    => $e->errorDescription,
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Boleto creation unexpected error', [
+                            'mensalidade_id' => $mensalidade->id,
+                            'message'        => $e->getMessage(),
+                        ]);
                     }
                 }
+            }
 
-                return response()->json([
-                    'message'  => 'Mensalidade cadastrada com sucesso!',
-                    'response' => $mensalidade->fresh(),
-                ], 201);
-            });
+            return response()->json([
+                'message'  => 'Mensalidade cadastrada com sucesso!',
+                'response' => $mensalidade->fresh(),
+            ], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Houve um erro ao cadastrar a mensalidade.'], 500);
         }

@@ -2,8 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,19 +27,6 @@ Route::get('health', function () {
 });
 Route::post('tokenefi', 'App\Http\Controllers\Efi\AuthController@auth');
 Route::post('auth/logout', 'App\Http\Controllers\AuthController@logout');
-Route::get('/register', function (Request $request) {
-    // Validação dos dados recebidos (opcional)
-    
-    // Criação do usuário
-    return $user = User::create([
-        'name' => 'Hardware',
-        'email' => "hardware_swiftpaysolucoes12tyhf@swiftpaysolucoes.com",
-        'password' => Hash::make('fjhk$re8teu*dh13'),
-    ]);
-
-    // Retorna o usuário criado como JSON
-    return response()->json($user, 201);
-});
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

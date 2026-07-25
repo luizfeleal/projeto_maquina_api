@@ -22,17 +22,22 @@ class EnviarAlertasMensalidade extends Command
         $hoje = Carbon::today();
 
         $cenarios = [
-            5 => AlertaMensalidade5Dias::class,
-            3 => AlertaMensalidade3Dias::class,
-            0 => AlertaMensalidadeVencimentoHoje::class,
+            5 => ['mailable' => AlertaMensalidade5Dias::class, 'coluna' => 'alerta_5_enviado_em'],
+            3 => ['mailable' => AlertaMensalidade3Dias::class, 'coluna' => 'alerta_3_enviado_em'],
+            0 => ['mailable' => AlertaMensalidadeVencimentoHoje::class, 'coluna' => 'alerta_0_enviado_em'],
         ];
 
-        foreach ($cenarios as $dias => $mailableClass) {
-            $vencimento = $hoje->copy()->addDays($dias);
+        foreach ($cenarios as $dias => $cenario) {
+            $mailableClass = $cenario['mailable'];
+            $coluna        = $cenario['coluna'];
+            $vencimento    = $hoje->copy()->addDays($dias);
 
             $mensalidades = Mensalidade::whereDate('vencimento', $vencimento)
                 ->where('status', '!=', 'pago')
+                ->whereNull($coluna)
                 ->get();
+
+            $enviados = 0;
 
             foreach ($mensalidades as $mensalidade) {
                 $cliente = Clientes::find($mensalidade->id_cliente);
@@ -43,9 +48,12 @@ class EnviarAlertasMensalidade extends Command
 
                 Mail::to($cliente->cliente_email)
                     ->send(new $mailableClass($mensalidade, $cliente));
+
+                $mensalidade->update([$coluna => $hoje]);
+                $enviados++;
             }
 
-            $this->info("Alertas de {$dias} dias enviados: {$mensalidades->count()} mensalidade(s).");
+            $this->info("Alertas de {$dias} dias enviados: {$enviados} mensalidade(s).");
         }
 
         return Command::SUCCESS;
