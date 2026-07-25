@@ -91,9 +91,8 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::post('financeiro/mensalidades/{id}/boleto/gerar', 'App\Http\Controllers\MensalidadeController@gerarBoleto');
     Route::post('financeiro/mensalidades/{id}/boleto/cancelar', 'App\Http\Controllers\MensalidadeController@cancelarBoleto');
     Route::post('financeiro/mensalidades/{id}/boleto/reenviar', 'App\Http\Controllers\MensalidadeController@reenviarBoleto');
-    Route::apiResource('financeiro/estoquePlacas', 'App\Http\Controllers\EstoquePlacaController');
+    Route::apiResource('financeiro/estoqueProdutos', 'App\Http\Controllers\EstoqueProdutoController');
     Route::apiResource('financeiro/historicoResets', 'App\Http\Controllers\HistoricoResetController');
-    Route::get('financeiro/estoquePlacas/{id}/comprovante', 'App\Http\Controllers\PdfController@comprovanteVendaPlaca');
 
     // Dashboard de Desempenho (Gráficos)
     Route::get('dashboard/desempenho', 'App\Http\Controllers\DashboardController@desempenho');
