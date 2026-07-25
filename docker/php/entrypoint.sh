@@ -6,7 +6,7 @@ if [ ! -f .env ] && [ -f .env.docker.example ]; then
 fi
 
 mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
-chown -R laravel:laravel storage bootstrap/cache 2>/dev/null || true
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
 if [ -f artisan ]; then
     php artisan package:discover --ansi || true

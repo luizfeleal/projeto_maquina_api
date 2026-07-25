@@ -41,7 +41,7 @@ COPY docker/php/zz-fpm-env.conf /usr/local/etc/php-fpm.d/zz-fpm-env.conf
 
 RUN chmod +x /usr/local/bin/laravel-entrypoint \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
-    && chown -R laravel:laravel storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache
 
 ENTRYPOINT ["laravel-entrypoint"]
 CMD ["php-fpm"]
