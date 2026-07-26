@@ -36,6 +36,9 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('usuarios','App\Http\Controllers\UsuariosController');
     Route::apiResource('logs','App\Http\Controllers\LogsController');
     Route::apiResource('clientes','App\Http\Controllers\ClientesController');
+    Route::get('clientes/{id}/produtos', 'App\Http\Controllers\ClienteEstoqueProdutoController@index');
+    Route::post('clientes/{id}/produtos', 'App\Http\Controllers\ClienteEstoqueProdutoController@store');
+    Route::delete('clientes/produtos/{id}', 'App\Http\Controllers\ClienteEstoqueProdutoController@destroy');
     Route::apiResource('maquinas','App\Http\Controllers\MaquinasController');
     Route::post('maquinas/atualizar','App\Http\Controllers\MaquinasController@update');
     Route::post('maquinas/{id_maquina}/reset-parcial', 'App\Http\Controllers\ResetParcialController@store');
