@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Support\HttpMetrics;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,4 +17,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return 'funcionou';
     return view('welcome');
+});
+
+Route::get('/metrics', function () {
+    return response(HttpMetrics::export(), 200)
+        ->header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
 });

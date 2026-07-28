@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExtratoMaquina;
+use App\Services\MaquinaResetParcialService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -29,20 +30,25 @@ class ExtratoMaquinaController extends Controller
         ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
         ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
         ->select(
+            'maquinas.id_maquina',
             'locais.local_nome',
             'maquinas.maquina_nome',
             'extrato_maquina.extrato_operacao',
             'extrato_maquina.extrato_operacao_valor',
             'extrato_maquina.extrato_operacao_tipo',
-            DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%d/%m/%Y %H:%i') as data_criacao") // Formatando a data
-        )
-        ->orderBy('extrato_maquina.data_criacao', 'desc'); // Ordenação padrão
+            DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%d/%m/%Y %H:%i') as data_criacao")
+        );
+
+        $this->aplicarFiltroDataExtrato($query, $request);
+        $this->aplicarFiltroTipoOperacao($query, $request);
 
         // Filtro de pesquisa
-        $search = $request->get('search'); // Valor da pesquisa do DataTables
+        $search = $request->input('search.value') ?? $request->input('search');
+        if (is_array($search)) {
+            $search = $search['value'] ?? null;
+        }
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                // Adicione aqui as colunas que podem ser pesquisadas
                 $q->where('locais.local_nome', 'like', "%$search%")
                   ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
                   ->orWhere('extrato_maquina.extrato_operacao', 'like', "%$search%")
@@ -59,11 +65,12 @@ class ExtratoMaquinaController extends Controller
             ->count();
 
         // Total de registros filtrados
-        $totalFiltered = $query->count();
+        $totalFiltered = (clone $query)->count();
 
         // Obter os parâmetros de ordenação
-        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
-        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
+        $order = $request->get('order', [['column' => 4, 'dir' => 'desc']]);
+        $orderColumn = $order[0]['column'] ?? 4;
+        $orderDirection = $order[0]['dir'] ?? 'desc';
 
         // Definir as colunas para ordenar
         $columns = [
@@ -191,74 +198,89 @@ class ExtratoMaquinaController extends Controller
     public function acumulatedPerMachine(Request $request)
 {
     try {
-        // Número de registros por página
-        $perPage = $request->get('length', 10); 
-        // Página atual
-        $page = $request->get('start', 0) / $perPage + 1;
-    
-        // Query base com joins e COALESCE para totalizadores
+        $perPage = max((int) $request->get('length', 10), 1);
+
         $query = DB::table('maquinas')
             ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
             ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->whereNull('maquinas.deleted_at')
             ->select(
+                'maquinas.id_maquina',
                 'locais.local_nome',
                 'maquinas.maquina_nome',
                 'maquinas.id_placa',
                 'maquinas.maquina_status',
+                'maquinas.maquina_ultima_coleta',
+                'maquinas.maquina_ultimo_contato',
+                'maquinas.bloqueio_jogada_efi',
+                'maquinas.bloqueio_jogada_pagbank',
+                DB::raw('(SELECT MAX(mrp.created_at) FROM maquina_resets_parciais mrp WHERE mrp.id_maquina = maquinas.id_maquina) as data_ultimo_reset'),
                 DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
             )
-            ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
-    
-        // Filtro de pesquisa
-        $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
+            ->groupBy(
+                'maquinas.id_maquina',
+                'locais.local_nome',
+                'maquinas.maquina_nome',
+                'maquinas.id_placa',
+                'maquinas.maquina_status',
+                'maquinas.maquina_ultima_coleta',
+                'maquinas.maquina_ultimo_contato',
+                'maquinas.bloqueio_jogada_efi',
+                'maquinas.bloqueio_jogada_pagbank'
+            );
+
+        if ($idCliente = $request->input('id_cliente')) {
+            $query->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
+                ->where('cliente_local.id_cliente', $idCliente);
+        }
+
+        $search = $request->input('search.value') ?? $request->input('search_value');
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                // Adicione aqui as colunas que podem ser pesquisadas
-                $q->where('locais.local_nome', 'like', "%$search%")
-                  ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
-                  ->orWhere('maquinas.id_placa', 'like', "%$search%")
-                  ->orWhere('maquinas.maquina_status', 'like', "%$search%");
+                $q->where('locais.local_nome', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_nome', 'like', "%{$search}%")
+                  ->orWhere('maquinas.id_placa', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_status', 'like', "%{$search}%");
             });
         }
-    
-        // Obter os parâmetros de ordenação
-        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
-        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
 
-        // Definir as colunas para ordenar
+        $order = $request->get('order', [['column' => 4, 'dir' => 'desc']]);
+        $orderColumn = $order[0]['column'] ?? 4;
+        $orderDirection = $order[0]['dir'] ?? 'desc';
+
         $columns = [
-            'locais.local_nome',            // Coluna 0
-            'maquinas.maquina_nome',         // Coluna 1
-            'maquinas.id_placa',             // Coluna 2
-            'maquinas.maquina_status',       // Coluna 3
-            'total_maquina',                 // Coluna 4
-            'total_pix',                     // Coluna 5
-            'total_cartao',                  // Coluna 6
-            'total_dinheiro'                 // Coluna 7
+            'locais.local_nome',
+            'maquinas.maquina_nome',
+            'maquinas.id_placa',
+            'maquinas.maquina_status',
+            'total_maquina',
+            'total_pix',
+            'total_cartao',
+            'total_dinheiro',
         ];
 
-        // Aplicar ordenação na consulta
-        $query->orderBy($columns[$orderColumn], $orderDirection);
-    
-        // Total de registros sem filtro
-        $totalRecords = DB::table('maquinas')->count();
-    
-        // Total de registros filtrados
-        $totalFiltered = $query->count();
-    
-        // Paginar os dados
-        $extrato = $query->offset($request->get('start', 0))
+        if (isset($columns[$orderColumn])) {
+            $query->orderBy($columns[$orderColumn], $orderDirection);
+        }
+
+        $totalRecords = DB::table('maquinas')->whereNull('deleted_at')->count();
+        $totalFiltered = DB::query()->fromSub($query, 'acumulado')->count();
+
+        $extrato = $query->offset((int) $request->get('start', 0))
                          ->limit($perPage)
                          ->get();
-    
-        // Responder no formato esperado pelo DataTables
+
+        $extrato = MaquinaResetParcialService::enrichAcumuladoCollection($extrato);
+
+        $extrato = $extrato->map(fn ($item) => $this->appendStatusComunicacao($item));
+
         return response()->json([
             'data' => $extrato,
-            'recordsTotal' => count($extrato), // Total de registros sem filtro
-            'recordsFiltered' => count($extrato) // Total de registros após o filtro
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalFiltered,
         ], 200);
     } catch (Exception $e) {
         return response()->json([
@@ -351,47 +373,62 @@ public static function acumulatedPerMachineOfClient(Request $request)
             ->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local') // Juntando locais com cliente_local
             ->where('cliente_local.id_cliente', $id_cliente)
             ->select(
+                'maquinas.id_maquina',
                 'locais.local_nome',
                 'maquinas.maquina_nome',
                 'maquinas.id_placa',
                 'maquinas.maquina_status',
+                'maquinas.maquina_ultima_coleta',
+                'maquinas.maquina_ultimo_contato',
+                'maquinas.bloqueio_jogada_efi',
+                'maquinas.bloqueio_jogada_pagbank',
+                DB::raw('(SELECT MAX(mrp.created_at) FROM maquina_resets_parciais mrp WHERE mrp.id_maquina = maquinas.id_maquina) as data_ultimo_reset'),
                 DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Dinheiro" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_dinheiro')
             )
-            ->groupBy('locais.local_nome', 'maquinas.maquina_nome', 'maquinas.id_placa', 'maquinas.maquina_status');
+            ->groupBy(
+                'maquinas.id_maquina',
+                'locais.local_nome',
+                'maquinas.maquina_nome',
+                'maquinas.id_placa',
+                'maquinas.maquina_status',
+                'maquinas.maquina_ultima_coleta',
+                'maquinas.maquina_ultimo_contato',
+                'maquinas.bloqueio_jogada_efi',
+                'maquinas.bloqueio_jogada_pagbank'
+            );
 
         // Filtro de pesquisa
-        $search = $request->get('search')['value']; // Valor da pesquisa do DataTables
+        $search = $request->input('search.value') ?? $request->input('search_value');
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                // Adicione aqui as colunas que podem ser pesquisadas
-                $q->where('locais.local_nome', 'like', "%$search%")
-                  ->orWhere('maquinas.maquina_nome', 'like', "%$search%")
-                  ->orWhere('maquinas.id_placa', 'like', "%$search%")
-                  ->orWhere('maquinas.maquina_status', 'like', "%$search%");
+                $q->where('locais.local_nome', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_nome', 'like', "%{$search}%")
+                  ->orWhere('maquinas.id_placa', 'like', "%{$search}%")
+                  ->orWhere('maquinas.maquina_status', 'like', "%{$search}%");
             });
         }
 
-        // Obter os parâmetros de ordenação
-        $orderColumn = $request->get('order')[0]['column']; // Índice da coluna
-        $orderDirection = $request->get('order')[0]['dir']; // Direção da ordenação (asc ou desc)
+        $order = $request->get('order', [['column' => 4, 'dir' => 'desc']]);
+        $orderColumn = $order[0]['column'] ?? 4;
+        $orderDirection = $order[0]['dir'] ?? 'desc';
 
-        // Definir as colunas para ordenar
         $columns = [
-            'locais.local_nome',            // Coluna 0
-            'maquinas.maquina_nome',         // Coluna 1
-            'maquinas.id_placa',             // Coluna 2
-            'maquinas.maquina_status',       // Coluna 3
-            'total_maquina',                 // Coluna 4
-            'total_pix',                     // Coluna 5
-            'total_cartao',                  // Coluna 6
-            'total_dinheiro'                 // Coluna 7
+            'locais.local_nome',
+            'maquinas.maquina_nome',
+            'maquinas.id_placa',
+            'maquinas.maquina_status',
+            'total_maquina',
+            'total_pix',
+            'total_cartao',
+            'total_dinheiro',
         ];
 
-        // Aplicar ordenação na consulta
-        $query->orderBy($columns[$orderColumn], $orderDirection);
+        if (isset($columns[$orderColumn])) {
+            $query->orderBy($columns[$orderColumn], $orderDirection);
+        }
 
         // Total de registros para a contagem
         $totalRecords = DB::table('maquinas')->count();
@@ -401,11 +438,15 @@ public static function acumulatedPerMachineOfClient(Request $request)
                          ->limit($request->get('length', 10))
                          ->get();
 
+        $extrato = MaquinaResetParcialService::enrichAcumuladoCollection($extrato);
+
+        $extrato = $extrato->map(fn ($item) => $this->appendStatusComunicacao($item));
+
         // Responder no formato esperado pelo DataTables
         return response()->json([
             'data' => $extrato,
             'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $totalRecords // Total de registros filtrados será igual ao total de registros
+            'recordsFiltered' => $totalRecords
         ], 200);
     } catch (Exception $e) {
         return response()->json(['error' => 'Houve um erro ao tentar coletar o extrato.'], 500);
@@ -415,113 +456,95 @@ public static function acumulatedPerMachineOfClient(Request $request)
     public function getTheLastTransactionPerMachine(Request $request)
     {
         try {
-            $rows = DB::table('maquinas')
-                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
-                ->leftJoin(DB::raw('(
-                    SELECT em.id_maquina, em.extrato_operacao, em.extrato_operacao_valor,
-                           em.extrato_operacao_tipo, em.data_criacao
-                    FROM extrato_maquina em
-                    INNER JOIN (
-                        SELECT id_maquina, MAX(id_extrato_maquina) AS max_id_extrato
-                        FROM extrato_maquina
-                        GROUP BY id_maquina
-                    ) latest ON em.id_maquina = latest.id_maquina
-                            AND em.id_extrato_maquina = latest.max_id_extrato
-                ) as last_tx'), 'maquinas.id_maquina', '=', 'last_tx.id_maquina')
-                ->select(
-                    'maquinas.id_maquina',
-                    'maquinas.id_local',
-                    'maquinas.maquina_nome',
-                    'maquinas.maquina_status',
-                    'locais.local_nome',
-                    'last_tx.extrato_operacao',
-                    'last_tx.extrato_operacao_valor',
-                    'last_tx.extrato_operacao_tipo',
-                    'last_tx.data_criacao as extrato_data_criacao'
-                )
-                ->whereNull('maquinas.deleted_at')
-                ->get();
+            $result = $this->queryMachinesWithLastTransaction()
+                ->get()
+                ->map(fn ($row) => $this->formatMachineLastTransactionRow($row));
 
-            $result = $rows->map(function ($row) {
-                return [
-                    'id_local' => $row->id_local,
-                    'id_maquina' => $row->id_maquina,
-                    'local_nome' => $row->local_nome,
-                    'maquina_nome' => $row->maquina_nome,
-                    'maquina_status' => $row->maquina_status,
-                    'extrato_operacao' => $row->extrato_operacao ?? 'N/A',
-                    'extrato_operacao_valor' => $row->extrato_operacao_valor ?? 0,
-                    'extrato_operacao_tipo' => $row->extrato_operacao_tipo ?? 'N/A',
-                    'data_criacao' => $row->extrato_data_criacao,
-                ];
-            })->values();
-
-            return response()->json($result, 200);
+            return response()->json($result->values(), 200);
         } catch (Exception $e) {
             return response()->json(['error' => 'Houve um erro ao tentar coletar os dados das máquinas.'], 500);
         }
     }
+
     public function getTheLastTransactionPerMachineOfClient(Request $request)
     {
         try {
             $id_cliente = $request->input('id_cliente');
-            // 1. Recuperar todas as máquinas
-            $machines = DB::table('maquinas')
-            ->join('locais', 'maquinas.id_local', '=', 'locais.id_local') // Juntando máquinas com locais
-            ->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local') // Juntando locais com cliente_local
-            ->where('cliente_local.id_cliente', $id_cliente) 
-                ->select(
-                    'maquinas.id_maquina',
-                    'maquinas.id_local',
-                    'maquinas.maquina_nome',
-                    'maquinas.maquina_status',
-                    'locais.local_nome',
-                    'maquinas.data_criacao'
-                )
-                ->where('maquinas.deleted_at', NULL)
+
+            $result = $this->queryMachinesWithLastTransaction($id_cliente)
                 ->get()
-                ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
-    
-            // 2. Recuperar a última transação para cada máquina usando uma subconsulta
-            $lastTransactions = DB::table('extrato_maquina as em')
-                ->select(
-                    'em.id_maquina',
-                    'em.extrato_operacao',
-                    'em.extrato_operacao_valor',
-                    'em.extrato_operacao_tipo',
-                    'em.data_criacao'
-                )
-                ->join(DB::raw('(SELECT id_maquina, MAX(data_criacao) AS last_transaction_date FROM extrato_maquina GROUP BY id_maquina) as latest'), function ($join) {
-                    $join->on('em.id_maquina', '=', 'latest.id_maquina')
-                         ->on('em.data_criacao', '=', 'latest.last_transaction_date');
-                })
-                ->whereIn('em.id_maquina', $machines->keys())
-                ->get()
-                ->keyBy('id_maquina'); // Indexar por id_maquina para fácil acesso
-    
-            // 3. Montar a resposta com todas as máquinas e suas últimas transações
-            $result = $machines->map(function ($machine) use ($lastTransactions) {
-                $lastTransaction = $lastTransactions->get($machine->id_maquina); // Pegando a última transação ou nulo
-    
-                return [
-                    'id_local' => $machine->id_local,
-                    'id_maquina' => $machine->id_maquina,
-                    'local_nome' => $machine->local_nome,
-                    'maquina_nome' => $machine->maquina_nome,
-                    'maquina_status' => $machine->maquina_status,
-                    'extrato_operacao' => $lastTransaction ? $lastTransaction->extrato_operacao : 'N/A',
-                    'extrato_operacao_valor' => $lastTransaction ? $lastTransaction->extrato_operacao_valor : 0,
-                    'extrato_operacao_tipo' => $lastTransaction ? $lastTransaction->extrato_operacao_tipo : 'N/A',
-                    'data_criacao' => $machine->data_criacao,
-                ];
-            });
-    
-            // Responder no formato esperado pelo DataTables
-            return response()->json($result, 200);
-    
+                ->map(fn ($row) => $this->formatMachineLastTransactionRow($row, useMachineCreationDate: true));
+
+            return response()->json($result->values(), 200);
         } catch (Exception $e) {
             return response()->json(['error' => 'Houve um erro ao tentar coletar os dados das máquinas.'], 500);
         }
+    }
+
+    private function queryMachinesWithLastTransaction(?int $idCliente = null)
+    {
+        $lastTransactionsSub = DB::table('extrato_maquina as em')
+            ->joinSub(
+                DB::table('extrato_maquina')
+                    ->select('id_maquina', DB::raw('MAX(id_extrato_maquina) as max_id'))
+                    ->groupBy('id_maquina'),
+                'latest',
+                function ($join) {
+                    $join->on('em.id_extrato_maquina', '=', 'latest.max_id');
+                }
+            )
+            ->select(
+                'em.id_maquina',
+                'em.extrato_operacao',
+                'em.extrato_operacao_valor',
+                'em.extrato_operacao_tipo',
+                'em.data_criacao as extrato_data_criacao'
+            );
+
+        $query = DB::table('maquinas as m')
+            ->join('locais as l', 'm.id_local', '=', 'l.id_local')
+            ->leftJoinSub($lastTransactionsSub, 'last_em', function ($join) {
+                $join->on('m.id_maquina', '=', 'last_em.id_maquina');
+            })
+            ->whereNull('m.deleted_at')
+            ->select(
+                'm.id_maquina',
+                'm.id_local',
+                'm.maquina_nome',
+                'm.maquina_status',
+                'm.data_criacao as maquina_data_criacao',
+                'l.local_nome',
+                'last_em.extrato_operacao',
+                'last_em.extrato_operacao_valor',
+                'last_em.extrato_operacao_tipo',
+                'last_em.extrato_data_criacao'
+            )
+            ->orderBy('l.local_nome')
+            ->orderBy('m.maquina_nome');
+
+        if ($idCliente !== null) {
+            $query->join('cliente_local as cl', 'l.id_local', '=', 'cl.id_local')
+                ->where('cl.id_cliente', $idCliente);
+        }
+
+        return $query;
+    }
+
+    private function formatMachineLastTransactionRow(object $row, bool $useMachineCreationDate = false): array
+    {
+        return [
+            'id_local' => $row->id_local,
+            'id_maquina' => $row->id_maquina,
+            'local_nome' => $row->local_nome,
+            'maquina_nome' => $row->maquina_nome,
+            'maquina_status' => $row->maquina_status,
+            'extrato_operacao' => $row->extrato_operacao ?? 'N/A',
+            'extrato_operacao_valor' => $row->extrato_operacao_valor ?? 0,
+            'extrato_operacao_tipo' => $row->extrato_operacao_tipo ?? 'N/A',
+            'data_criacao' => $useMachineCreationDate
+                ? ($row->maquina_data_criacao ?? null)
+                : ($row->extrato_data_criacao ?? null),
+        ];
     }
 
     public function indexClient(Request $request)
@@ -1055,5 +1078,74 @@ public static function acumulatedPerMachineOfClient(Request $request)
         ];
     
         return response()->json($result, 200);
+    }
+
+    /**
+     * Aplica filtro de intervalo de datas em consultas de extrato_maquina.
+     */
+    private function aplicarFiltroDataExtrato($query, Request $request): void
+    {
+        $dataInicio = $request->input('data_inicio');
+        $dataFim    = $request->input('data_fim');
+
+        if ($dataInicio) {
+            $inicio = Carbon::createFromFormat('Y-m-d', $dataInicio)->startOfDay()->format('Y-m-d H:i:s');
+            $query->where('extrato_maquina.data_criacao', '>=', $inicio);
+        }
+
+        if ($dataFim) {
+            $fim = Carbon::createFromFormat('Y-m-d', $dataFim)->endOfDay()->format('Y-m-d H:i:s');
+            $query->where('extrato_maquina.data_criacao', '<=', $fim);
+        }
+    }
+
+    /**
+     * Adiciona status_comunicacao, status_pix e status_cartao ao item do acumulado.
+     * - status_comunicacao: true se a máquina se conectou nos últimos 15 minutos
+     * - status_pix:         true se bloqueio_jogada_efi == false
+     * - status_cartao:      true se bloqueio_jogada_pagbank == false
+     */
+    private function appendStatusComunicacao(mixed $item): mixed
+    {
+        $arr = (array) $item;
+
+        $ultimoContato = $arr['maquina_ultimo_contato'] ?? null;
+        $arr['status_comunicacao'] = $ultimoContato
+            ? Carbon::parse($ultimoContato)->diffInMinutes(Carbon::now()) <= 15
+            : false;
+
+        $arr['status_pix']    = !(bool) ($arr['bloqueio_jogada_efi']     ?? false);
+        $arr['status_cartao'] = !(bool) ($arr['bloqueio_jogada_pagbank'] ?? false);
+
+        return $arr;
+    }
+
+    /**
+     * Filtra extrato pelo tipo de operação (PIX, Cartão, Dinheiro).
+     */
+    private function aplicarFiltroTipoOperacao($query, Request $request): void
+    {
+        $tipo = strtolower(trim((string) (
+            $request->input('tipo_operacao')
+            ?? $request->input('tipo_transacao')
+            ?? ''
+        )));
+
+        if ($tipo === '') {
+            return;
+        }
+
+        match ($tipo) {
+            'pix' => $query->whereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) LIKE ?', ['%pix%']),
+            'cartao', 'cartão' => $query->whereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) LIKE ?', ['%cart%']),
+            'dinheiro' => $query->where(function ($q) {
+                $q->whereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) LIKE ?', ['%dinheir%'])
+                  ->orWhereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) LIKE ?', ['%fisic%']);
+            }),
+            default => $query->where(
+                'extrato_maquina.extrato_operacao_tipo',
+                $request->input('tipo_operacao') ?? $request->input('tipo_transacao')
+            ),
+        };
     }
 }

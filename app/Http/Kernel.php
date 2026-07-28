@@ -22,6 +22,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\RecordHttpMetrics::class,
     ];
 
     /**
@@ -66,5 +67,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'apiJwt' => \App\Http\Middleware\ProtectedRouteJwt::class,
         'permissionWebhook'=> \App\Http\Middleware\ChecarPermissoesWebhook::class,
+        'checkInadimplencia' => \App\Http\Middleware\CheckInadimplencia::class,
     ];
 }

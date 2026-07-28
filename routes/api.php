@@ -2,8 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,22 +14,19 @@ use Illuminate\Support\Facades\Hash;
 |
 */
 
+// Rota pública para Landing Page institucional
+Route::get('vendas', 'App\Http\Controllers\VendasController@index');
+
 Route::post('auth/login', 'App\Http\Controllers\AuthController@login');
+Route::get('health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'service' => config('app.name'),
+        'timestamp' => now()->toISOString(),
+    ]);
+});
 Route::post('tokenefi', 'App\Http\Controllers\Efi\AuthController@auth');
 Route::post('auth/logout', 'App\Http\Controllers\AuthController@logout');
-Route::get('/register', function (Request $request) {
-    // Validação dos dados recebidos (opcional)
-    
-    // Criação do usuário
-    return $user = User::create([
-        'name' => 'Hardware',
-        'email' => "hardware_swiftpaysolucoes12tyhf@swiftpaysolucoes.com",
-        'password' => Hash::make('fjhk$re8teu*dh13'),
-    ]);
-
-    // Retorna o usuário criado como JSON
-    return response()->json($user, 201);
-});
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -41,8 +36,14 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('usuarios','App\Http\Controllers\UsuariosController');
     Route::apiResource('logs','App\Http\Controllers\LogsController');
     Route::apiResource('clientes','App\Http\Controllers\ClientesController');
+    Route::get('clientes/{id}/produtos', 'App\Http\Controllers\ClienteEstoqueProdutoController@index');
+    Route::post('clientes/{id}/produtos', 'App\Http\Controllers\ClienteEstoqueProdutoController@store');
+    Route::delete('clientes/produtos/{id}', 'App\Http\Controllers\ClienteEstoqueProdutoController@destroy');
     Route::apiResource('maquinas','App\Http\Controllers\MaquinasController');
     Route::post('maquinas/atualizar','App\Http\Controllers\MaquinasController@update');
+    Route::post('maquinas/{id_maquina}/reset-parcial', 'App\Http\Controllers\ResetParcialController@store');
+    Route::get('maquinas/{id_maquina}/reset-parcial/ultimo', 'App\Http\Controllers\ResetParcialController@ultimo');
+    Route::get('reset-parcial/historico', 'App\Http\Controllers\ResetParcialController@historico');
     Route::apiResource('maquinasCartao','App\Http\Controllers\MaquinasCartaoController');
     Route::post('maquinasCartaoAtualizar','App\Http\Controllers\MaquinasCartaoController@inactive');
     Route::apiResource('clienteLocal','App\Http\Controllers\ClienteLocalController');
@@ -68,8 +69,25 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::post('credApiPix/{id}/atualizar', 'App\Http\Controllers\CredApiPixController@update');
     Route::apiResource('credApiPix','App\Http\Controllers\CredApiPixController');
     Route::post('hardware/status', 'App\Http\Controllers\Hardware\StatusController@atualizarStatus');
-    Route::post('hardware/liberarJogada', 'App\Http\Controllers\Hardware\JogadasController@liberarJogada');
+    Route::post('hardware/liberarJogada', 'App\Http\Controllers\Hardware\JogadasController@liberarJogada')->middleware('checkInadimplencia');
     Route::post('hardware/maquinasDisponiveis', 'App\Http\Controllers\Hardware\MaquinasController@listarMaquinasDisponiveisParaRegistro');
+
+    // Módulo Financeiro
+    Route::apiResource('financeiro/despesas', 'App\Http\Controllers\DespesaController');
+    Route::get('financeiro/mensalidades-resumo', 'App\Http\Controllers\MensalidadeController@resumo');
+    Route::apiResource('financeiro/mensalidades', 'App\Http\Controllers\MensalidadeController');
+    Route::get('financeiro/mensalidades/{id}/boleto', 'App\Http\Controllers\MensalidadeController@boleto');
+    Route::post('financeiro/mensalidades/{id}/boleto/gerar', 'App\Http\Controllers\MensalidadeController@gerarBoleto');
+    Route::post('financeiro/mensalidades/{id}/boleto/cancelar', 'App\Http\Controllers\MensalidadeController@cancelarBoleto');
+    Route::post('financeiro/mensalidades/{id}/boleto/reenviar', 'App\Http\Controllers\MensalidadeController@reenviarBoleto');
+    Route::apiResource('financeiro/estoqueProdutos', 'App\Http\Controllers\EstoqueProdutoController');
+    Route::apiResource('financeiro/historicoResets', 'App\Http\Controllers\HistoricoResetController');
+
+    // Dashboard de Desempenho (Gráficos)
+    Route::get('dashboard/desempenho', 'App\Http\Controllers\DashboardController@desempenho');
+
+    // Reset de Aferição de Máquina
+    Route::post('maquinas/{id}/reset-afericao', 'App\Http\Controllers\ResetAfericaoController@reset');
 });
 
 //Route::post('webhook/efi', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamento');
@@ -78,6 +96,6 @@ Route::get('teste', function(){
     return 'cheguei';
 });
 Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial');//->middleware('permissionWebhook');
+Route::post('webhook/efi/boleto', 'App\Http\Controllers\Efi\Webhooks\BoletoWebhookController@handle');
 Route::post('webhook/pagbank', 'App\Http\Controllers\Pagbank\Webhooks\WebhookController@processamentoWebhook');
-
 

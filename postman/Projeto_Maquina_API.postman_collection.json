@@ -1,0 +1,943 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Projeto Maquina API",
+    "description": "Collection para testar a API Projeto Maquina (Laravel + JWT).\n\n## Como usar\n1. Importe o environment `Projeto_Maquina_HML.postman_environment.json`\n2. Ajuste `base_url`, `email` e `password` no environment\n3. Execute **Auth > Login** — o token JWT e salvo automaticamente\n4. Demais requests usam Bearer token da collection\n\nPrefixo das rotas: `/api`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8082/api"
+    },
+    {
+      "key": "jwt_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/health"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', json.access_token);",
+                  "    pm.environment.set('jwt_token', json.access_token);",
+                  "    pm.test('Token JWT salvo', function () {",
+                  "        pm.expect(json.access_token).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Login falhou', function () {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/logout"
+          }
+        },
+        {
+          "name": "Token EFI",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{base_url}}/tokenefi"
+          }
+        },
+        {
+          "name": "User (Sanctum)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/user"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/clientes"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente_nome\": \"Cliente Teste Postman\",\n  \"cliente_celular\": \"21999999999\",\n  \"cliente_email\": \"cliente.postman@exemplo.com\",\n  \"cliente_cpf_cnpj\": \"12345678901\",\n  \"checkbox_efi\": true,\n  \"checkbox_pagbank\": false\n}"
+            },
+            "url": "{{base_url}}/clientes"
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/clientes/{{id_cliente}}"
+          }
+        },
+        {
+          "name": "Atualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente_nome\": \"Cliente Atualizado Postman\"\n}"
+            },
+            "url": "{{base_url}}/clientes/{{id_cliente}}"
+          }
+        },
+        {
+          "name": "Remover",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/clientes/{{id_cliente}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/usuarios"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_grupo_acesso\": 1,\n  \"id_cliente\": {{id_cliente}},\n  \"usuario_nome\": \"Usuario Postman\",\n  \"usuario_email\": \"usuario.postman@exemplo.com\",\n  \"usuario_login\": \"usuario_postman\",\n  \"usuario_senha\": \"senha123\"\n}"
+            },
+            "url": "{{base_url}}/usuarios"
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/usuarios/{{id_usuario}}"
+          }
+        },
+        {
+          "name": "Atualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_nome\": \"Usuario Atualizado Postman\"\n}"
+            },
+            "url": "{{base_url}}/usuarios/{{id_usuario}}"
+          }
+        },
+        {
+          "name": "Remover",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/usuarios/{{id_usuario}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Locais",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/locais"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"local_nome\": \"Local Teste Postman\",\n  \"id_cliente\": {{id_cliente}}\n}"
+            },
+            "url": "{{base_url}}/locais"
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/locais/{{id_local}}"
+          }
+        },
+        {
+          "name": "Atualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"local_nome\": \"Local Atualizado Postman\"\n}"
+            },
+            "url": "{{base_url}}/locais/{{id_local}}"
+          }
+        },
+        {
+          "name": "Remover",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/locais/{{id_local}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maquinas",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/maquinas"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maquina_referencia\": \"REF-POSTMAN-001\",\n  \"maquina_nome\": \"Maquina Teste Postman\",\n  \"maquina_status\": 0,\n  \"id_local\": {{id_local}},\n  \"id_placa\": \"{{id_placa}}\"\n}"
+            },
+            "url": "{{base_url}}/maquinas"
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/maquinas/{{id_maquina}}"
+          }
+        },
+        {
+          "name": "Atualizar (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maquina_nome\": \"Maquina Atualizada Postman\"\n}"
+            },
+            "url": "{{base_url}}/maquinas/{{id_maquina}}"
+          }
+        },
+        {
+          "name": "Atualizar (POST maquinas/atualizar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_maquina\": {{id_maquina}},\n  \"maquina_nome\": \"Maquina Atualizada via POST\",\n  \"maquina_status\": 1\n}"
+            },
+            "url": "{{base_url}}/maquinas/atualizar"
+          }
+        },
+        {
+          "name": "Remover",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/maquinas/{{id_maquina}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maquinas Cartao",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/maquinasCartao"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_maquina\": {{id_maquina}},\n  \"device\": \"SERIAL_DEVICE_POSTMAN\",\n  \"status\": 1\n}"
+            },
+            "url": "{{base_url}}/maquinasCartao"
+          }
+        },
+        {
+          "name": "Inativar (maquinasCartaoAtualizar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_maquina\": {{id_maquina}},\n  \"device\": \"SERIAL_DEVICE_POSTMAN\"\n}"
+            },
+            "url": "{{base_url}}/maquinasCartaoAtualizar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Extrato Maquina",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/extratoMaquina"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_maquina\": {{id_maquina}},\n  \"extrato_operacao_tipo\": \"Entrada\",\n  \"extrato_operacao_valor\": \"15.50\",\n  \"extrato_operacao_status\": \"Sucesso\",\n  \"extrato_operacao_saldo\": \"15.50\"\n}"
+            },
+            "url": "{{base_url}}/extratoMaquina"
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/extratoMaquina/1"
+          }
+        },
+        {
+          "name": "Acumulado por Maquina",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/extrato/acumulado?start=0&length=10",
+              "host": ["{{base_url}}"],
+              "path": ["extrato", "acumulado"],
+              "query": [
+                { "key": "start", "value": "0" },
+                { "key": "length", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Acumulado por Local",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/extrato/acumuladoLocal?id_local={{id_local}}",
+              "host": ["{{base_url}}"],
+              "path": ["extrato", "acumuladoLocal"],
+              "query": [{ "key": "id_local", "value": "{{id_local}}" }]
+            }
+          }
+        },
+        {
+          "name": "Total Geral",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/extrato/total"
+          }
+        },
+        {
+          "name": "Total por Cliente",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/extrato/total/{{id_cliente}}"
+          }
+        },
+        {
+          "name": "Devolucao Geral",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/extrato/devolucao"
+          }
+        },
+        {
+          "name": "Saldo Geral",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/extrato/saldo"
+          }
+        },
+        {
+          "name": "Ultima Transacao por Maquina",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/totalMaquinas"
+          }
+        },
+        {
+          "name": "Relatorio Total Transacoes",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": [{{id_cliente}}],\n  \"id_maquina\": [{{id_maquina}}],\n  \"tipo_transacao\": \"PIX\",\n  \"data_inicio\": \"2025-01-01\",\n  \"data_fim\": \"2025-12-31\",\n  \"start\": 0,\n  \"length\": 10\n}"
+            },
+            "url": "{{base_url}}/relatorioTotalTransacoes"
+          }
+        },
+        {
+          "name": "Relatorio Total Transacoes - Totalizador",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": [{{id_cliente}}],\n  \"id_maquina\": [{{id_maquina}}],\n  \"id_local\": [{{id_local}}],\n  \"tipo_transacao\": \"PIX\",\n  \"data_inicio\": \"2025-01-01\",\n  \"data_fim\": \"2025-12-31\",\n  \"start\": 0,\n  \"length\": 10\n}"
+            },
+            "url": "{{base_url}}/relatorioTotalTransacoesTotal"
+          }
+        },
+        {
+          "name": "Relatorio Total Transacoes - Taxas",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": [{{id_cliente}}],\n  \"id_maquina\": [{{id_maquina}}],\n  \"id_local\": [{{id_local}}],\n  \"data_inicio\": \"2025-01-01\",\n  \"data_fim\": \"2025-12-31\"\n}"
+            },
+            "url": "{{base_url}}/relatorioTotalTransacoesTaxa"
+          }
+        },
+        {
+          "name": "Transacao Maquina Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": {{id_cliente}}\n}"
+            },
+            "url": "{{base_url}}/transacaoMaquinaCliente"
+          }
+        },
+        {
+          "name": "Total Transacao Maquina Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": {{id_cliente}},\n  \"start\": 0,\n  \"length\": 10\n}"
+            },
+            "url": "{{base_url}}/totalTransacaoMaquinaCliente"
+          }
+        },
+        {
+          "name": "Acumulado Maquina Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": {{id_cliente}}\n}"
+            },
+            "url": "{{base_url}}/totalTransacaoMaquinaAcumuladoCliente"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Extrato Cliente",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/extratoCliente"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": {{id_cliente}},\n  \"extrato_operacao_tipo\": \"Entrada\",\n  \"extrato_operacao_valor\": \"10.00\",\n  \"extrato_operacao_status\": \"Sucesso\"\n}"
+            },
+            "url": "{{base_url}}/extratoCliente"
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/extratoCliente/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Grupos Acesso",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/gruposAcesso"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grupo_acesso_nome\": \"Grupo Teste Postman\"\n}"
+            },
+            "url": "{{base_url}}/gruposAcesso"
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/gruposAcesso/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Acessos Tela",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/acessosTela"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_grupo_acesso\": 1,\n  \"acesso_tela_nome\": \"dashboard\"\n}"
+            },
+            "url": "{{base_url}}/acessosTela"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cliente Local",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/clienteLocal"
+          }
+        },
+        {
+          "name": "Criar vinculo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": {{id_cliente}},\n  \"id_local\": {{id_local}}\n}"
+            },
+            "url": "{{base_url}}/clienteLocal"
+          }
+        }
+      ]
+    },
+    {
+      "name": "QR Code",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/QRCode"
+          }
+        },
+        {
+          "name": "Criar (integracao EFI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": {{id_cliente}},\n  \"select_local\": {{id_local}},\n  \"select_maquina\": {{id_maquina}}\n}"
+            },
+            "url": "{{base_url}}/QRCode",
+            "description": "Requer credenciais EFI cadastradas para o cliente. Pode chamar APIs externas."
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/QRCode/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credenciais PIX",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/credApiPix"
+          }
+        },
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": {{id_cliente}},\n  \"tipo_cred\": \"efi\",\n  \"client_id\": \"SEU_CLIENT_ID\",\n  \"client_secret\": \"SEU_CLIENT_SECRET\"\n}"
+            },
+            "url": "{{base_url}}/credApiPix"
+          }
+        },
+        {
+          "name": "Atualizar com certificado (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "client_id", "value": "SEU_CLIENT_ID", "type": "text" },
+                { "key": "client_secret", "value": "SEU_CLIENT_SECRET", "type": "text" },
+                { "key": "certificado", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{base_url}}/credApiPix/1/atualizar",
+            "description": "Upload de certificado EFI via multipart/form-data."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hardware",
+      "item": [
+        {
+          "name": "Atualizar Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_placa\": \"{{id_placa}}\",\n  \"status\": true\n}"
+            },
+            "url": "{{base_url}}/hardware/status"
+          }
+        },
+        {
+          "name": "Liberar Jogada",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_placa\": \"{{id_placa}}\",\n  \"valor\": 5,\n  \"id_transacao\": \"tx-postman-001\"\n}"
+            },
+            "url": "{{base_url}}/hardware/liberarJogada",
+            "description": "Chama API de hardware externa. Use com cuidado em hml."
+          }
+        },
+        {
+          "name": "Maquinas Disponiveis",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{base_url}}/hardware/maquinasDisponiveis"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/logs"
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/logs/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks (publicos)",
+      "item": [
+        {
+          "name": "Webhook EFI PIX",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pix\": [\n    {\n      \"txid\": \"exemplo-txid\",\n      \"valor\": \"5.00\",\n      \"horario\": \"2025-06-16T12:00:00Z\",\n      \"endToEndId\": \"E123456789\"\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/webhook/efi/pix",
+            "description": "Simula payload EFI. Ajuste conforme documentacao Efí."
+          }
+        },
+        {
+          "name": "Webhook PagBank",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notificationType\": \"transaction\",\n  \"notificationCode\": \"CODIGO_NOTIFICACAO\"\n}"
+            },
+            "url": "{{base_url}}/webhook/pagbank",
+            "description": "Simula notificacao PagBank. Consulta API externa com notificationCode."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Utilitarios",
+      "item": [
+        {
+          "name": "Teste",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/teste"
+          }
+        }
+      ]
+    }
+  ]
+}

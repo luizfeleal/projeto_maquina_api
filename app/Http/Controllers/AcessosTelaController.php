@@ -47,6 +47,9 @@ class AcessosTelaController extends Controller
             }
 
             return DB::transaction(function () use ($dados) {
+                if (!isset($dados['ativo'])) {
+                    $dados['ativo'] = 1;
+                }
                 $acesso_tela = new AcessosTela();
                 $acesso_tela->fill($dados);
                 $acesso_tela->save();
