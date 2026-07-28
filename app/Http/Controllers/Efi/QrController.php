@@ -18,7 +18,7 @@ class QrController extends Controller
                                       ->setTxid('12')
                                       ->setValorTransacao(10.00);
 
-        return $payload;
+        return $payload->getPayload();
 
     }
 }
