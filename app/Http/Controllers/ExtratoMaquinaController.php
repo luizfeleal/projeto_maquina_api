@@ -41,6 +41,8 @@ class ExtratoMaquinaController extends Controller
 
         $this->aplicarFiltroDataExtrato($query, $request);
         $this->aplicarFiltroTipoOperacao($query, $request);
+        $this->aplicarFiltroMaquinaLocalCliente($query, $request);
+        $this->aplicarFiltroTaxa($query, $request);
 
         // Filtro de pesquisa
         $search = $request->input('search.value') ?? $request->input('search');
@@ -1147,5 +1149,55 @@ public static function acumulatedPerMachineOfClient(Request $request)
                 $request->input('tipo_operacao') ?? $request->input('tipo_transacao')
             ),
         };
+    }
+
+    /**
+     * Filtra extrato por máquina, local ou cliente — usado pela paginação
+     * server-side das telas de extrato (admin e cliente), evitando que o
+     * front precise buscar todos os registros para depois filtrar em PHP.
+     */
+    private function aplicarFiltroMaquinaLocalCliente($query, Request $request): void
+    {
+        $idMaquina = $this->paraArrayDeIds($request->input('id_maquina'));
+        if (!empty($idMaquina)) {
+            $query->whereIn('extrato_maquina.id_maquina', $idMaquina);
+        }
+
+        $idLocal = $this->paraArrayDeIds($request->input('id_local'));
+        if (!empty($idLocal)) {
+            $query->whereIn('maquinas.id_local', $idLocal);
+        }
+
+        $idCliente = $this->paraArrayDeIds($request->input('id_cliente'));
+        if (!empty($idCliente)) {
+            $query->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
+                  ->whereIn('cliente_local.id_cliente', $idCliente);
+        }
+    }
+
+    /**
+     * Exclui transações do tipo "Taxa" apenas quando mostrar_taxas=0 é
+     * informado explicitamente. A ausência do parâmetro mantém o
+     * comportamento padrão (sem filtro), para não quebrar chamadas
+     * existentes que esperam o extrato completo (dashboards, relatórios).
+     */
+    private function aplicarFiltroTaxa($query, Request $request): void
+    {
+        if ($request->has('mostrar_taxas') && !$request->boolean('mostrar_taxas')) {
+            $query->whereRaw('LOWER(extrato_maquina.extrato_operacao_tipo) NOT LIKE ?', ['%taxa%']);
+        }
+    }
+
+    private function paraArrayDeIds($valor): array
+    {
+        if (empty($valor)) {
+            return [];
+        }
+
+        if (is_array($valor)) {
+            return array_values(array_filter($valor, fn($v) => $v !== null && $v !== ''));
+        }
+
+        return array_values(array_filter(explode(',', (string) $valor), fn($v) => $v !== ''));
     }
 }
