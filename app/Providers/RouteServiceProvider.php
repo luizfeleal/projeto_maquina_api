@@ -57,7 +57,12 @@ class RouteServiceProvider extends ServiceProvider
     protected function configureRateLimiting()
     {
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
+            // Esta API é de uso interno: o app principal (projeto_maquina) autentica com uma
+            // única credencial de máquina e faz uma chamada por request de CADA usuário real
+            // do sistema. Com o limite de 60/min por usuário autenticado, todo o tráfego de
+            // produção (todos os usuários simultâneos) compete pelo mesmo balde de 60/min,
+            // esgotando rapidamente e gerando 429 "Too Many Attempts" em uso normal.
+            return Limit::perMinute(600)->by(optional($request->user())->id ?: $request->ip());
         });
     }
 }
