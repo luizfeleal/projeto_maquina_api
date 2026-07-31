@@ -998,20 +998,22 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $query = DB::table('maquinas')
             ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
             ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
-            ->leftJoin('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
             ->select(DB::raw('
                 COALESCE(SUM(
-                    CASE 
+                    CASE
                         WHEN extrato_maquina.extrato_operacao = "C" THEN extrato_maquina.extrato_operacao_valor
                         WHEN extrato_maquina.extrato_operacao = "D" THEN -extrato_maquina.extrato_operacao_valor
                         ELSE 0
                     END
                 ), 0) as saldo_final
             '));
-    
-        // Aplica o filtro por cliente, se o $id for fornecido
+
+        // Join com cliente_local só entra quando filtramos por cliente: um local pode ter mais
+        // de um cliente associado, e um JOIN incondicional duplica cada transação por cliente
+        // vinculado ao local, inflando o SUM (contagem em dobro/triplo).
         if (!is_null($id)) {
-            $query->where('cliente_local.id_cliente', $id);
+            $query->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
+                ->where('cliente_local.id_cliente', $id);
         }
     
         // Retorna o valor final diretamente
@@ -1029,12 +1031,13 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $query = DB::table('maquinas')
             ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
             ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
-            ->leftJoin('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
             ->where('extrato_maquina.extrato_operacao_tipo', 'Estorno');  // Condição para "Estorno"
-    
-        // Aplica o filtro por cliente, se o $id for fornecido
+
+        // Join com cliente_local só entra quando filtramos por cliente (ver getTotalSaldo acima
+        // para o motivo: JOIN incondicional duplica transações de locais com múltiplos clientes).
         if (!is_null($id)) {
-            $query->where('cliente_local.id_cliente', $id);
+            $query->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
+                ->where('cliente_local.id_cliente', $id);
         }
     
         // Calcula a soma para cada período
@@ -1060,14 +1063,17 @@ public static function acumulatedPerMachineOfClient(Request $request)
         $query = DB::table('maquinas')
             ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
             ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
-            ->leftJoin('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
             ->where('extrato_maquina.extrato_operacao', 'C');  // Condição para "Estorno"
-    
-        // Aplica o filtro por cliente, se o $id for fornecido
+
+        // Join com cliente_local só entra quando filtramos por cliente: um local pode ter mais
+        // de um cliente associado, e um JOIN incondicional duplica cada transação por cliente
+        // vinculado ao local, inflando o SUM (contagem em dobro/triplo). Era isso que fazia o
+        // saldo do período aparecer contado duas vezes no dashboard.
         if (!is_null($id)) {
-            $query->where('cliente_local.id_cliente', $id);
+            $query->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local')
+                ->where('cliente_local.id_cliente', $id);
         }
-    
+
         // Calcula a soma para cada período
         $result = [
             'hoje' => (clone $query)->whereDate('extrato_maquina.data_criacao', $dataHoje)->sum('extrato_maquina.extrato_operacao_valor'),
@@ -1078,7 +1084,7 @@ public static function acumulatedPerMachineOfClient(Request $request)
                                            ->where('extrato_maquina.data_criacao', '<=', $mesPassado . '-31')
                                            ->sum('extrato_maquina.extrato_operacao_valor'),
         ];
-    
+
         return response()->json($result, 200);
     }
 
