@@ -50,6 +50,26 @@ class MaquinaResetParcialServiceTest extends TestCase
     }
 
     /** @test */
+    public function enrich_acumulado_sem_reset_usa_total_como_saldo_periodo_mesmo_com_id_maquina_valido()
+    {
+        // Regressão: total_maquina é uma soma "crua" (sem inverter sinal de devolução),
+        // enquanto obterSaldoPeriodo() soma com sinal (C soma, D subtrai). Sem reset, o
+        // saldo do período deve ser igual ao total acumulado exibido na tela — e não pode
+        // disparar uma segunda consulta que recalcule o valor com uma fórmula diferente.
+        $row = (object) [
+            'id_maquina' => 42,
+            'total_maquina' => 300.00,
+            'maquina_ultima_coleta' => null,
+            'data_ultimo_reset' => null,
+        ];
+
+        $enriched = MaquinaResetParcialService::enrichAcumuladoRow($row);
+
+        $this->assertFalse($enriched['tem_reset']);
+        $this->assertSame(300.00, $enriched['saldo_periodo']);
+    }
+
+    /** @test */
     public function enrich_acumulado_formata_data_ultimo_reset()
     {
         $row = (object) [

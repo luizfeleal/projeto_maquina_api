@@ -90,15 +90,15 @@ class MaquinaResetParcialService
         $data['ultima_coleta'] = $temReset ? round((float) $ultimaColetaRaw, 2) : null;
         $data['tem_reset'] = $temReset;
 
-        if ($idMaquina > 0) {
-            $data['saldo_periodo'] = self::obterSaldoPeriodo(
-                $idMaquina,
-                $temReset ? (string) $dataUltimoResetRaw : null
-            );
+        if (!$temReset) {
+            // Sem reset, o período é o histórico inteiro da máquina — usa o mesmo
+            // valor exibido como "Total Acumulado" em vez de recalcular com uma
+            // fórmula diferente (evita divergência quando há registros de devolução).
+            $data['saldo_periodo'] = $total;
+        } elseif ($idMaquina > 0) {
+            $data['saldo_periodo'] = self::obterSaldoPeriodo($idMaquina, (string) $dataUltimoResetRaw);
         } else {
-            $data['saldo_periodo'] = $temReset
-                ? round($total - (float) $ultimaColetaRaw, 2)
-                : $total;
+            $data['saldo_periodo'] = round($total - (float) $ultimaColetaRaw, 2);
         }
 
         if ($dataUltimoResetRaw !== null && $dataUltimoResetRaw !== '') {
