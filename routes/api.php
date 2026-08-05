@@ -51,6 +51,7 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('acessosTela','App\Http\Controllers\AcessosTelaController');
     Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
     Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
+    Route::get('extrato/resumoHome','App\Http\Controllers\ExtratoMaquinaController@resumoHome');
     Route::get('extrato/acumulado','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachine');
     Route::get('extrato/total/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotal');
     Route::get('extrato/devolucao/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotalDevolucao');

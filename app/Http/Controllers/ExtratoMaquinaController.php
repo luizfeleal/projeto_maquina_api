@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExtratoMaquina;
+use App\Models\Maquinas;
+use App\Models\Locais;
+use App\Models\Clientes;
+use App\Models\QrCode;
 use App\Services\MaquinaResetParcialService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -1086,6 +1090,102 @@ public static function acumulatedPerMachineOfClient(Request $request)
         ];
 
         return response()->json($result, 200);
+    }
+
+    /**
+     * Resumo consolidado da Home do admin: reúne numa única resposta tudo que
+     * antes exigia 7 chamadas HTTP sequenciais do front (saldo, devoluções,
+     * máquinas, locais, clientes, qr codes, acumulado por máquina) mais um
+     * loop paginado baixando TODAS as transações pra somar em PHP.
+     *
+     * Reaproveita as mesmas queries/endpoints já usados individualmente
+     * (getTotal, getTotalDevolucao, acumulatedPerMachine, Model::all()) pra
+     * garantir os mesmos números de sempre. A única coisa nova é substituir
+     * o download de todas as transações por agregações feitas no banco
+     * (últimas 15 transações + totais por tipo/mês), preservando exatamente
+     * as mesmas regras de classificação (PIX/Cartão/Dinheiro/Devolução) que
+     * o front já aplicava.
+     */
+    public function resumoHome(Request $request)
+    {
+        try {
+            $idMaquina = $request->input('id_maquina');
+
+            // O front usa /extrato/saldo (getTotalSaldo), NÃO /extrato/total (getTotal) —
+            // são cálculos diferentes (saldo por período vs. saldo líquido C-D acumulado).
+            $saldo = json_decode($this->getTotalSaldo()->getContent(), true);
+            $devolucoes = json_decode($this->getTotalDevolucao()->getContent(), true);
+
+            $acumuladoRequest = Request::create('/extrato/acumulado', 'GET', [
+                'length' => 5000,
+                'start' => 0,
+                'order' => [['column' => 4, 'dir' => 'desc']],
+            ]);
+            $acumuladoData = json_decode($this->acumulatedPerMachine($acumuladoRequest)->getContent(), true)['data'] ?? [];
+
+            $maquinas = Maquinas::all();
+            $locais = Locais::all();
+            $clientes = Clientes::all();
+            $qrCodes = QrCode::all();
+
+            $baseQuery = DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local');
+
+            if (!empty($idMaquina)) {
+                $baseQuery->where('extrato_maquina.id_maquina', $idMaquina);
+            }
+
+            // Últimas 15 transações (mesmas colunas/formato do index()), pra exibição.
+            $ultimasTransacoes = (clone $baseQuery)
+                ->select(
+                    'maquinas.id_maquina',
+                    'locais.local_nome',
+                    'maquinas.maquina_nome',
+                    'extrato_maquina.extrato_operacao',
+                    'extrato_maquina.extrato_operacao_valor',
+                    'extrato_maquina.extrato_operacao_tipo',
+                    DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%d/%m/%Y %H:%i') as data_criacao")
+                )
+                ->orderBy('extrato_maquina.data_criacao', 'desc')
+                ->limit(15)
+                ->get();
+
+            // Totais por tipo/mês, no banco. extrato_operacao NULL é tratado como "C"
+            // (não-devolução), igual ao `$tx['extrato_operacao'] ?? 'C'` do front.
+            $totaisPorTipoMes = (clone $baseQuery)
+                ->whereRaw("COALESCE(extrato_maquina.extrato_operacao, 'C') != 'D'")
+                ->select(
+                    DB::raw('YEAR(extrato_maquina.data_criacao) as ano'),
+                    DB::raw('MONTH(extrato_maquina.data_criacao) as mes'),
+                    DB::raw('LOWER(extrato_maquina.extrato_operacao_tipo) as tipo'),
+                    DB::raw('SUM(extrato_maquina.extrato_operacao_valor) as total')
+                )
+                ->groupBy('ano', 'mes', 'tipo')
+                ->get();
+
+            $totalDevolucaoFiltro = (float) (clone $baseQuery)
+                ->where('extrato_maquina.extrato_operacao', 'D')
+                ->sum('extrato_maquina.extrato_operacao_valor');
+
+            return response()->json([
+                'saldo' => $saldo,
+                'devolucoes' => $devolucoes,
+                'maquinas' => $maquinas,
+                'locais' => $locais,
+                'clientes' => $clientes,
+                'qr_codes' => $qrCodes,
+                'acumulado' => $acumuladoData,
+                'ultimas_transacoes' => $ultimasTransacoes,
+                'totais_por_tipo_mes' => $totaisPorTipoMes,
+                'total_devolucao_filtro' => $totalDevolucaoFiltro,
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Houve um erro ao tentar coletar o resumo da home.',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
