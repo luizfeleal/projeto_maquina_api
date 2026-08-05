@@ -12,11 +12,19 @@ use Illuminate\Http\Request;
 class UsuariosController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
 
         try{
-            $usuarios = Usuarios::all();
+            $login = $request->query('login');
+
+            if (!empty($login)) {
+                $usuarios = Usuarios::where('usuario_login', $login)
+                    ->orWhere('usuario_email', $login)
+                    ->get();
+            } else {
+                $usuarios = Usuarios::all();
+            }
 
             return response()->json($usuarios, 200);
         }catch(Exception $e){
