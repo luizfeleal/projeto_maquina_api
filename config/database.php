@@ -54,6 +54,13 @@ return [
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
+            // Fuso da sessão MySQL. Sem isso o servidor responde em UTC (o
+            // system_time_zone dele) e as colunas TIMESTAMP são renderizadas 3h
+            // à frente do horário de Brasília, o que fazia DATE(data_criacao)
+            // cair no dia seguinte a partir das 21h. Offset numérico em vez de
+            // nome de fuso porque não depende das tabelas de timezone do MySQL
+            // estarem carregadas — e o Brasil não usa mais horário de verão.
+            'timezone' => env('DB_TIMEZONE', '-03:00'),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,

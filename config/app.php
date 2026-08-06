@@ -67,7 +67,17 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // O servidor MySQL roda em UTC, e a aplicação também rodava em UTC. Com isso
+    // "hoje" virava o dia seguinte às 21h no horário de Brasília: o Faturamento
+    // do dashboard zerava toda noite, e o movimento das últimas 3 horas do dia
+    // caía no dia seguinte. Como a operação é toda no Brasil, os cortes de dia e
+    // mês precisam seguir o fuso local.
+    //
+    // Anda junto com 'timezone' => '-03:00' na conexão mysql (config/database.php):
+    // as colunas de data são TIMESTAMP, que o MySQL converte automaticamente
+    // para o fuso da sessão, então leitura e escrita continuam coerentes — e o
+    // histórico já gravado passa a ser exibido no horário local correto.
+    'timezone' => env('APP_TIMEZONE', 'America/Sao_Paulo'),
 
     /*
     |--------------------------------------------------------------------------
