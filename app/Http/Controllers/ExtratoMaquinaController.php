@@ -9,6 +9,7 @@ use App\Models\Clientes;
 use App\Models\QrCode;
 use App\Services\MaquinaResetParcialService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -64,11 +65,16 @@ class ExtratoMaquinaController extends Controller
             });
         }
 
-        // Total de registros (sem filtro)
-        $totalRecords = DB::table('extrato_maquina')
-            ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
-            ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
-            ->count();
+        // Total de registros (sem filtro). O DataTables só usa esse número para
+        // exibir "de X registros"; ele varre a tabela inteira e não muda entre a
+        // digitação de uma busca e a troca de página, então um cache curto tira
+        // uma varredura completa de cada requisição sem defasagem perceptível.
+        $totalRecords = Cache::remember('extrato_maquina_total_registros', now()->addSeconds(60), function () {
+            return DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local')
+                ->count();
+        });
 
         // Total de registros filtrados
         $totalFiltered = (clone $query)->count();
@@ -209,6 +215,11 @@ class ExtratoMaquinaController extends Controller
         $query = DB::table('maquinas')
             ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
             ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
+            ->leftJoinSub(
+                MaquinaResetParcialService::subqueryUltimoReset(),
+                'ultimo_reset_por_maquina',
+                fn ($join) => $join->on('ultimo_reset_por_maquina.id_maquina', '=', 'maquinas.id_maquina')
+            )
             ->whereNull('maquinas.deleted_at')
             ->select(
                 'maquinas.id_maquina',
@@ -220,7 +231,8 @@ class ExtratoMaquinaController extends Controller
                 'maquinas.maquina_ultimo_contato',
                 'maquinas.bloqueio_jogada_efi',
                 'maquinas.bloqueio_jogada_pagbank',
-                DB::raw('(SELECT MAX(mrp.created_at) FROM maquina_resets_parciais mrp WHERE mrp.id_maquina = maquinas.id_maquina) as data_ultimo_reset'),
+                DB::raw('ultimo_reset_por_maquina.ultimo_reset as data_ultimo_reset'),
+                DB::raw(MaquinaResetParcialService::exprSaldoPeriodo() . ' as saldo_periodo_calc'),
                 DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
@@ -235,7 +247,8 @@ class ExtratoMaquinaController extends Controller
                 'maquinas.maquina_ultima_coleta',
                 'maquinas.maquina_ultimo_contato',
                 'maquinas.bloqueio_jogada_efi',
-                'maquinas.bloqueio_jogada_pagbank'
+                'maquinas.bloqueio_jogada_pagbank',
+                'ultimo_reset_por_maquina.ultimo_reset'
             );
 
         if ($idCliente = $request->input('id_cliente')) {
@@ -377,6 +390,11 @@ public static function acumulatedPerMachineOfClient(Request $request)
             ->leftJoin('extrato_maquina', 'maquinas.id_maquina', '=', 'extrato_maquina.id_maquina')
             ->leftJoin('locais', 'maquinas.id_local', '=', 'locais.id_local')
             ->join('cliente_local', 'locais.id_local', '=', 'cliente_local.id_local') // Juntando locais com cliente_local
+            ->leftJoinSub(
+                MaquinaResetParcialService::subqueryUltimoReset(),
+                'ultimo_reset_por_maquina',
+                fn ($join) => $join->on('ultimo_reset_por_maquina.id_maquina', '=', 'maquinas.id_maquina')
+            )
             ->where('cliente_local.id_cliente', $id_cliente)
             ->select(
                 'maquinas.id_maquina',
@@ -388,7 +406,8 @@ public static function acumulatedPerMachineOfClient(Request $request)
                 'maquinas.maquina_ultimo_contato',
                 'maquinas.bloqueio_jogada_efi',
                 'maquinas.bloqueio_jogada_pagbank',
-                DB::raw('(SELECT MAX(mrp.created_at) FROM maquina_resets_parciais mrp WHERE mrp.id_maquina = maquinas.id_maquina) as data_ultimo_reset'),
+                DB::raw('ultimo_reset_por_maquina.ultimo_reset as data_ultimo_reset'),
+                DB::raw(MaquinaResetParcialService::exprSaldoPeriodo() . ' as saldo_periodo_calc'),
                 DB::raw('COALESCE(SUM(extrato_maquina.extrato_operacao_valor), 0) as total_maquina'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "PIX" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_pix'),
                 DB::raw('COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao_tipo = "Cartão" THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_cartao'),
@@ -403,7 +422,8 @@ public static function acumulatedPerMachineOfClient(Request $request)
                 'maquinas.maquina_ultima_coleta',
                 'maquinas.maquina_ultimo_contato',
                 'maquinas.bloqueio_jogada_efi',
-                'maquinas.bloqueio_jogada_pagbank'
+                'maquinas.bloqueio_jogada_pagbank',
+                'ultimo_reset_por_maquina.ultimo_reset'
             );
 
         // Filtro de pesquisa
@@ -1123,10 +1143,31 @@ public static function acumulatedPerMachineOfClient(Request $request)
             ]);
             $acumuladoData = json_decode($this->acumulatedPerMachine($acumuladoRequest)->getContent(), true)['data'] ?? [];
 
-            $maquinas = Maquinas::all();
-            $locais = Locais::all();
-            $clientes = Clientes::all();
-            $qrCodes = QrCode::all();
+            // Só as colunas que a Home realmente usa. Em especial qr_code.qr_image
+            // é um longtext com o PNG do QR em base64, e a Home só precisa saber
+            // se existe QR ativo — trazer a imagem de todas as máquinas enchia a
+            // resposta com megabytes de payload inútil.
+            $maquinas = DB::table('maquinas')
+                ->whereNull('deleted_at')
+                ->select('id_maquina', 'id_local', 'maquina_nome', 'id_placa', 'maquina_status')
+                ->get();
+
+            $locais = DB::table('locais')
+                ->whereNull('deleted_at')
+                ->select('id_local', 'local_nome')
+                ->get();
+
+            // Clientes não usa SoftDeletes no model, então segue sem filtro de
+            // deleted_at para manter exatamente a mesma lista de antes.
+            $clientes = DB::table('clientes')
+                ->select('id_cliente', 'cliente_nome')
+                ->get();
+
+            $qrCodes = DB::table('qr_code')
+                ->whereNull('deleted_at')
+                ->where('ativo', 1)
+                ->select('id_maquina', 'ativo')
+                ->get();
 
             $baseQuery = DB::table('extrato_maquina')
                 ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
@@ -1183,6 +1224,192 @@ public static function acumulatedPerMachineOfClient(Request $request)
         } catch (Exception $e) {
             return response()->json([
                 'error' => 'Houve um erro ao tentar coletar o resumo da home.',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Resumo consolidado da Home do cliente.
+     *
+     * Mesma ideia do resumoHome do admin: junta numa resposta só o que o painel
+     * buscava em 7 chamadas HTTP sequenciais (saldo, devoluções, cliente_local,
+     * máquinas, locais, acumulado, QR codes) mais a lista de transações.
+     *
+     * O conteúdo de cada bloco é idêntico ao dos endpoints individuais — inclusive
+     * `transacoes`, que reusa queryMachinesWithLastTransaction() e portanto segue
+     * trazendo a última transação de cada máquina, como antes. A montagem dos
+     * totais e do gráfico continua no painel, sobre exatamente os mesmos dados.
+     */
+    public function resumoHomeCliente(Request $request)
+    {
+        try {
+            $idCliente = $request->input('id_cliente');
+
+            if (empty($idCliente)) {
+                return response()->json(['error' => 'id_cliente é obrigatório.'], 400);
+            }
+
+            $saldo = json_decode($this->getTotalSaldo($idCliente)->getContent(), true);
+            $devolucoes = json_decode($this->getTotalDevolucao($idCliente)->getContent(), true);
+
+            $acumuladoRequest = Request::create('/extrato/acumulado', 'GET', [
+                'id_cliente' => $idCliente,
+                'length' => 5000,
+                'start' => 0,
+                'order' => [['column' => 4, 'dir' => 'desc']],
+            ]);
+            $acumuladoData = json_decode($this->acumulatedPerMachine($acumuladoRequest)->getContent(), true)['data'] ?? [];
+
+            // Locais do cliente — base para filtrar máquinas e locais.
+            $idsLocais = DB::table('cliente_local')
+                ->where('id_cliente', $idCliente)
+                ->pluck('id_local')
+                ->all();
+
+            $maquinas = DB::table('maquinas')
+                ->whereNull('deleted_at')
+                ->whereIn('id_local', $idsLocais ?: [0])
+                ->select('id_maquina', 'id_local', 'maquina_nome', 'id_placa', 'maquina_status')
+                ->get();
+
+            $locais = DB::table('locais')
+                ->whereNull('deleted_at')
+                ->whereIn('id_local', $idsLocais ?: [0])
+                ->select('id_local', 'local_nome')
+                ->get();
+
+            // Só o suficiente para saber se a máquina tem QR ativo: qr_image é um
+            // longtext com o PNG em base64 e não é usado nesta tela.
+            $qrCodes = DB::table('qr_code')
+                ->whereNull('deleted_at')
+                ->where('ativo', 1)
+                ->select('id_maquina', 'ativo')
+                ->get();
+
+            $transacoes = $this->queryMachinesWithLastTransaction((int) $idCliente)
+                ->get()
+                ->map(fn ($row) => $this->formatMachineLastTransactionRow($row, useMachineCreationDate: true))
+                ->values();
+
+            return response()->json([
+                'saldo' => $saldo,
+                'devolucoes' => $devolucoes,
+                'maquinas' => $maquinas,
+                'locais' => $locais,
+                'qr_codes' => $qrCodes,
+                'acumulado' => $acumuladoData,
+                'transacoes' => $transacoes,
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Houve um erro ao tentar coletar o resumo da home do cliente.',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Totais da tela de Extrato (admin e cliente), agregados no banco.
+     *
+     * Antes o painel baixava TODAS as transações que batiam no filtro — em lotes
+     * paginados de 2000, até 200 mil registros — só para somar seis números em
+     * PHP. Aqui é um SELECT com agregação: um roundtrip, resposta de bytes.
+     *
+     * Usa exatamente os mesmos helpers de filtro do index(), então os totais
+     * passam a bater sempre com o que a tabela lista (antes o filtro do topo era
+     * feito em PHP e o da tabela em SQL, o que podia divergir).
+     *
+     * A classificação PIX/Cartão/Dinheiro replica a cadeia if/elseif do front:
+     * devolução ganha de tudo, depois PIX, depois Cartão, depois Dinheiro.
+     */
+    public function resumoTransacoes(Request $request)
+    {
+        try {
+            $naoDevolucao = "COALESCE(extrato_maquina.extrato_operacao, 'C') <> 'D'";
+            $ehPix        = "LOWER(extrato_maquina.extrato_operacao_tipo) LIKE '%pix%'";
+            $ehCartao     = "LOWER(extrato_maquina.extrato_operacao_tipo) LIKE '%cart%'";
+            $ehDinheiro   = "(LOWER(extrato_maquina.extrato_operacao_tipo) LIKE '%dinheir%'
+                           OR LOWER(extrato_maquina.extrato_operacao_tipo) LIKE '%fisic%'
+                           OR LOWER(extrato_maquina.extrato_operacao_tipo) LIKE '%físic%')";
+            $valor        = 'extrato_maquina.extrato_operacao_valor';
+
+            $query = DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->join('locais', 'maquinas.id_local', '=', 'locais.id_local');
+
+            $this->aplicarFiltroDataExtrato($query, $request);
+            $this->aplicarFiltroTipoOperacao($query, $request);
+            $this->aplicarFiltroMaquinaLocalCliente($query, $request);
+            $this->aplicarFiltroTaxa($query, $request);
+
+            $row = $query->selectRaw("
+                COUNT(*) as total_registros,
+                COALESCE(SUM(CASE WHEN {$naoDevolucao} THEN {$valor} ELSE -{$valor} END), 0) as total_acumulado,
+                COALESCE(SUM(CASE WHEN {$naoDevolucao} THEN 0 ELSE {$valor} END), 0) as total_devolucao,
+                COALESCE(SUM(CASE WHEN {$naoDevolucao} AND {$ehPix} THEN {$valor} ELSE 0 END), 0) as total_pix,
+                COALESCE(SUM(CASE WHEN {$naoDevolucao} AND NOT {$ehPix} AND {$ehCartao} THEN {$valor} ELSE 0 END), 0) as total_cartao,
+                COALESCE(SUM(CASE WHEN {$naoDevolucao} AND NOT {$ehPix} AND NOT {$ehCartao} AND {$ehDinheiro} THEN {$valor} ELSE 0 END), 0) as total_dinheiro
+            ")->first();
+
+            $totalAcumulado = round((float) ($row->total_acumulado ?? 0), 2);
+            $totalDevolucao = round((float) ($row->total_devolucao ?? 0), 2);
+
+            return response()->json([
+                'total_registros' => (int) ($row->total_registros ?? 0),
+                'total_acumulado' => $totalAcumulado,
+                'total_saldo'     => round($totalAcumulado - $totalDevolucao, 2),
+                'total_pix'       => round((float) ($row->total_pix ?? 0), 2),
+                'total_cartao'    => round((float) ($row->total_cartao ?? 0), 2),
+                'total_dinheiro'  => round((float) ($row->total_dinheiro ?? 0), 2),
+                'total_devolucao' => $totalDevolucao,
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Houve um erro ao tentar coletar o resumo das transações.',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Totais por mês e totais gerais para o dashboard financeiro, agregados no
+     * banco. Substitui o download de todas as transações que a tela fazia só
+     * para montar os gráficos de receita por mês/trimestre.
+     *
+     * Mantém a mesma classificação de antes: receita é `extrato_operacao = 'C'`
+     * e despesa é `'D'`, comparação estrita (nada de tratar NULL como 'C').
+     */
+    public function resumoFinanceiro(Request $request)
+    {
+        try {
+            $porMes = DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->where('extrato_maquina.extrato_operacao', 'C')
+                ->select(
+                    DB::raw("DATE_FORMAT(extrato_maquina.data_criacao, '%Y-%m') as mes"),
+                    DB::raw('SUM(extrato_maquina.extrato_operacao_valor) as total')
+                )
+                ->groupBy('mes')
+                ->orderBy('mes')
+                ->get();
+
+            $totais = DB::table('extrato_maquina')
+                ->join('maquinas', 'extrato_maquina.id_maquina', '=', 'maquinas.id_maquina')
+                ->selectRaw("
+                    COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao = 'C' THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_receitas,
+                    COALESCE(SUM(CASE WHEN extrato_maquina.extrato_operacao = 'D' THEN extrato_maquina.extrato_operacao_valor ELSE 0 END), 0) as total_despesas
+                ")
+                ->first();
+
+            return response()->json([
+                'por_mes'        => $porMes,
+                'total_receitas' => round((float) ($totais->total_receitas ?? 0), 2),
+                'total_despesas' => round((float) ($totais->total_despesas ?? 0), 2),
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Houve um erro ao tentar coletar o resumo financeiro.',
                 'message' => $e->getMessage(),
             ], 500);
         }

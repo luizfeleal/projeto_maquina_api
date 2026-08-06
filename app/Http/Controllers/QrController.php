@@ -30,9 +30,21 @@ class QrController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         try{
+            // qr_image é um longtext com o PNG do QR em base64. Várias telas só
+            // precisam saber quais máquinas têm QR ativo, e carregar a imagem de
+            // todos os QR codes só para isso pesa megabytes na resposta. Com
+            // ?sem_imagem=1 o consumidor pede a lista sem esse campo.
+            if ($request->boolean('sem_imagem')) {
+                $qrCode = QrCode::query()
+                    ->select('id_qr', 'id_chave_pix', 'id_maquina', 'id_local', 'ativo', 'data_criacao', 'data_alteracao')
+                    ->get();
+
+                return response()->json($qrCode, 200);
+            }
+
             $qrCode = QrCode::all();
 
             return response()->json($qrCode, 200);

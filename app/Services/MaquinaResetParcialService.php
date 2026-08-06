@@ -19,6 +19,44 @@ class MaquinaResetParcialService
         END";
     }
 
+    /**
+     * Subconsulta com a data do último reset por máquina, para ser usada como
+     * LEFT JOIN nas queries de acumulado.
+     *
+     * Substitui o `(SELECT MAX(...) ...)` correlacionado repetido em cada linha:
+     * uma agregação só, com índice em (id_maquina, created_at).
+     */
+    public static function subqueryUltimoReset()
+    {
+        return DB::table('maquina_resets_parciais')
+            ->select('id_maquina', DB::raw('MAX(created_at) as ultimo_reset'))
+            ->groupBy('id_maquina');
+    }
+
+    /**
+     * Expressão SQL que calcula o saldo do período (transações posteriores ao
+     * último reset) dentro da própria agregação do acumulado.
+     *
+     * É o equivalente em SQL de obterSaldoPeriodo(): mesma soma com sinal, mesmo
+     * corte por `data_criacao > ultimo_reset`. A diferença é que aqui o valor sai
+     * junto com o resto do GROUP BY, em vez de custar uma consulta por máquina
+     * (N+1 que, com o banco remoto, dominava o tempo da Home e do acumulado).
+     *
+     * Máquinas sem reset ficam com 0 aqui e continuam caindo no fallback de
+     * enrichAcumuladoRow(), que usa o total acumulado — comportamento inalterado.
+     */
+    public static function exprSaldoPeriodo(string $aliasExtrato = 'extrato_maquina', string $aliasReset = 'ultimo_reset_por_maquina'): string
+    {
+        $assinado = self::exprSaldoAssinado($aliasExtrato);
+
+        return "COALESCE(SUM(CASE
+            WHEN {$aliasReset}.ultimo_reset IS NOT NULL
+             AND {$aliasExtrato}.data_criacao > {$aliasReset}.ultimo_reset
+            THEN {$assinado}
+            ELSE 0
+        END), 0)";
+    }
+
     public static function obterTotalMaquina(int $idMaquina): float
     {
         $expr = self::exprSaldoAssinado();
@@ -95,11 +133,17 @@ class MaquinaResetParcialService
             // valor exibido como "Total Acumulado" em vez de recalcular com uma
             // fórmula diferente (evita divergência quando há registros de devolução).
             $data['saldo_periodo'] = $total;
+        } elseif (array_key_exists('saldo_periodo_calc', $data)) {
+            // A query de acumulado já trouxe o saldo do período agregado no banco
+            // (ver exprSaldoPeriodo). Evita uma consulta por máquina.
+            $data['saldo_periodo'] = round((float) $data['saldo_periodo_calc'], 2);
         } elseif ($idMaquina > 0) {
             $data['saldo_periodo'] = self::obterSaldoPeriodo($idMaquina, (string) $dataUltimoResetRaw);
         } else {
             $data['saldo_periodo'] = round($total - (float) $ultimaColetaRaw, 2);
         }
+
+        unset($data['saldo_periodo_calc']);
 
         if ($dataUltimoResetRaw !== null && $dataUltimoResetRaw !== '') {
             $data['data_ultimo_reset'] = self::formatIso8601($dataUltimoResetRaw);

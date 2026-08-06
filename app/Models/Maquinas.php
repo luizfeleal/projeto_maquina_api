@@ -27,8 +27,6 @@ class Maquinas extends Model
         'bloqueio_jogada_efi'
     ];
 
-    protected $appends = ['saldo_afericao'];
-
     protected $casts = [
         'maquina_ultima_coleta' => 'decimal:2',
         'ultimo_valor_reset'    => 'decimal:2',
@@ -36,6 +34,18 @@ class Maquinas extends Model
         'bloqueio_jogada_pagbank' => 'boolean',
     ];
 
+    /**
+     * Saldo desde o último reset de aferição.
+     *
+     * NÃO fica em $appends de propósito: o cálculo faz um SUM na extrato_maquina
+     * por máquina, então serializar uma lista de N máquinas custava N consultas
+     * (uma varredura da maior tabela do banco cada). Como o banco é remoto, isso
+     * dominava o tempo de qualquer endpoint que devolvesse máquinas — inclusive
+     * GET /maquinas, chamado em quase toda tela do painel.
+     *
+     * Quem realmente precisar do valor deve pedir explicitamente:
+     * `$maquina->append('saldo_afericao')` ou `$maquina->saldo_afericao`.
+     */
     public function getSaldoAfericaoAttribute(): float
     {
         $totalAcumulado = \Illuminate\Support\Facades\DB::table('extrato_maquina')

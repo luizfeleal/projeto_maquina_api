@@ -52,6 +52,9 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::apiResource('extratoCliente','App\Http\Controllers\ExtratoClienteController');
     Route::apiResource('extratoMaquina','App\Http\Controllers\ExtratoMaquinaController');
     Route::get('extrato/resumoHome','App\Http\Controllers\ExtratoMaquinaController@resumoHome');
+    Route::get('extrato/resumoTransacoes','App\Http\Controllers\ExtratoMaquinaController@resumoTransacoes');
+    Route::get('extrato/resumoHomeCliente','App\Http\Controllers\ExtratoMaquinaController@resumoHomeCliente');
+    Route::get('extrato/resumoFinanceiro','App\Http\Controllers\ExtratoMaquinaController@resumoFinanceiro');
     Route::get('extrato/acumulado','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachine');
     Route::get('extrato/total/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotal');
     Route::get('extrato/devolucao/{id?}','App\Http\Controllers\ExtratoMaquinaController@getTotalDevolucao');
