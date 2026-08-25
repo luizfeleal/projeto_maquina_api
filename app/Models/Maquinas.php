@@ -24,7 +24,8 @@ class Maquinas extends Model
         'maquina_ultima_coleta',
         'ultimo_valor_reset',
         'bloqueio_jogada_pagbank',
-        'bloqueio_jogada_efi'
+        'bloqueio_jogada_efi',
+        'bloqueio_jogada_mercadopago'
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class Maquinas extends Model
         'ultimo_valor_reset'    => 'decimal:2',
         'bloqueio_jogada_efi'   => 'boolean',
         'bloqueio_jogada_pagbank' => 'boolean',
+        'bloqueio_jogada_mercadopago' => 'boolean',
     ];
 
     /**

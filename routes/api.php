@@ -102,4 +102,5 @@ Route::get('teste', function(){
 Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial');//->middleware('permissionWebhook');
 Route::post('webhook/efi/boleto', 'App\Http\Controllers\Efi\Webhooks\BoletoWebhookController@handle');
 Route::post('webhook/pagbank', 'App\Http\Controllers\Pagbank\Webhooks\WebhookController@processamentoWebhook');
+Route::post('webhook/mercadopago', 'App\Http\Controllers\Mercadopago\Webhooks\WebhookController@processamentoWebhook');
 
