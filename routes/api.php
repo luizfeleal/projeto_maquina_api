@@ -69,6 +69,8 @@ Route::group(['middleware' => ['apiJwt']], function(){
     Route::post('totalTransacaoMaquinaAcumuladoCliente','App\Http\Controllers\ExtratoMaquinaController@acumulatedPerMachineOfClient');
     Route::apiResource('locais','App\Http\Controllers\LocaisController');
     Route::apiResource('QRCode','App\Http\Controllers\QrController');
+    Route::apiResource('mercadopagoLoja','App\Http\Controllers\Mercadopago\LojaController')->only(['index', 'store', 'show']);
+    Route::apiResource('mercadopagoQr','App\Http\Controllers\Mercadopago\QrController');
     // POST com multipart: PHP/Laravel costumam não popular arquivos em PUT; o painel envia certificado EFI aqui.
     Route::post('credApiPix/{id}/atualizar', 'App\Http\Controllers\CredApiPixController@update');
     Route::apiResource('credApiPix','App\Http\Controllers\CredApiPixController');
@@ -102,4 +104,5 @@ Route::get('teste', function(){
 Route::post('webhook/efi/pix', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamentoRequisicaoInicial');//->middleware('permissionWebhook');
 Route::post('webhook/efi/boleto', 'App\Http\Controllers\Efi\Webhooks\BoletoWebhookController@handle');
 Route::post('webhook/pagbank', 'App\Http\Controllers\Pagbank\Webhooks\WebhookController@processamentoWebhook');
+Route::post('webhook/mercadopago', 'App\Http\Controllers\Mercadopago\Webhooks\WebhookController@processamentoWebhook');
 
