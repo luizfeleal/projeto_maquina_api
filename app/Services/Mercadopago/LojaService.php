@@ -41,7 +41,7 @@ class LojaService
                 'street_name' => $cliente['cliente_logradouro'] ?? 'Não informado',
                 'street_number' => $cliente['cliente_numero'] ?? 'S/N',
                 'city_name' => $cliente['cliente_cidade'] ?? 'Não informado',
-                'state_name' => $cliente['cliente_uf'] ?? 'Não informado',
+                'state_name' => self::nomeEstado($cliente['cliente_uf'] ?? null),
                 'latitude' => 0,
                 'longitude' => 0,
             ],
@@ -69,5 +69,47 @@ class LojaService
         $loja->save();
 
         return $loja;
+    }
+
+    /**
+     * `clientes.cliente_uf` guarda a sigla (ex.: "SP"), mas a API de Lojas do
+     * Mercado Pago exige o nome completo do estado por extenso em
+     * `location.state_name` (erro: "location.state_name was invalid").
+     */
+    private static function nomeEstado(?string $uf): string
+    {
+        $estados = [
+            'AC' => 'Acre',
+            'AL' => 'Alagoas',
+            'AP' => 'Amapá',
+            'AM' => 'Amazonas',
+            'BA' => 'Bahia',
+            'CE' => 'Ceará',
+            'DF' => 'Distrito Federal',
+            'ES' => 'Espírito Santo',
+            'GO' => 'Goiás',
+            'MA' => 'Maranhão',
+            'MT' => 'Mato Grosso',
+            'MS' => 'Mato Grosso do Sul',
+            'MG' => 'Minas Gerais',
+            'PA' => 'Pará',
+            'PB' => 'Paraíba',
+            'PR' => 'Paraná',
+            'PE' => 'Pernambuco',
+            'PI' => 'Piauí',
+            'RJ' => 'Rio de Janeiro',
+            'RN' => 'Rio Grande do Norte',
+            'RS' => 'Rio Grande do Sul',
+            'RO' => 'Rondônia',
+            'RR' => 'Roraima',
+            'SC' => 'Santa Catarina',
+            'SP' => 'São Paulo',
+            'SE' => 'Sergipe',
+            'TO' => 'Tocantins',
+        ];
+
+        $uf = strtoupper(trim((string) $uf));
+
+        return $estados[$uf] ?? 'São Paulo';
     }
 }
