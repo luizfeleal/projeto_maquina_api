@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CredApiPix;
 use App\Services\Efi\ConversorArquivoService;
+use App\Services\Mercadopago\LojaService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Crypt;
@@ -73,7 +74,16 @@ class CredApiPixController extends Controller
                     "tipo_cred" => $dados['tipo_cred']
                 ]);
                 $cred->save();
-                return response()->json(['message' => 'Credencial cadastrada com sucesso!', 'response' => $cred], 201);
+
+                $loja = null;
+                if ($dados['tipo_cred'] === 'mercadopago') {
+                    // Loja é pré-requisito pra gerar QR/POS de qualquer máquina do
+                    // cliente (fluxo de cartão hoje, e Pix futuramente) — criamos
+                    // aqui pra não depender de um passo manual separado.
+                    $loja = LojaService::criarOuObterLoja((int) $dados['id_cliente'], $dados['client_secret']);
+                }
+
+                return response()->json(['message' => 'Credencial cadastrada com sucesso!', 'response' => $cred, 'loja_mercadopago' => $loja], 201);
             });
         } catch (ValidationException $e) {
             return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 400);
@@ -142,7 +152,15 @@ class CredApiPixController extends Controller
                 $cred->fill($updateData);
                 $cred->save();
 
-                return response()->json(['message' => 'Credencial atualizada com sucesso!', 'response' => $cred], 200);
+                $loja = null;
+                if ($dados['tipo_cred'] === 'mercadopago') {
+                    // Cobre tanto quem troca o tipo de credencial pra mercadopago
+                    // depois de já ter cadastrado, quanto uma tentativa anterior
+                    // que falhou ao criar a loja — criarOuObterLoja é idempotente.
+                    $loja = LojaService::criarOuObterLoja((int) $dados['id_cliente'], $dados['client_secret']);
+                }
+
+                return response()->json(['message' => 'Credencial atualizada com sucesso!', 'response' => $cred, 'loja_mercadopago' => $loja], 200);
             });
         } catch (Exception $e) {
             return response()->json(["response" => "Houve um erro ao tentar atualizar a credencial de id: $id.", "error" => $e->getMessage()], 500);
