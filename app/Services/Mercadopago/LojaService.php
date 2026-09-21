@@ -34,6 +34,8 @@ class LojaService
 
         $externalStoreId = 'CLI' . $idCliente;
 
+        $coordenadas = self::obterCoordenadas($cliente);
+
         $payload = [
             'name' => self::normalizarTexto($cliente['cliente_nome'] ?? $externalStoreId),
             'external_id' => $externalStoreId,
@@ -42,8 +44,8 @@ class LojaService
                 'street_number' => $cliente['cliente_numero'] ?? 'S/N',
                 'city_name' => self::normalizarTexto($cliente['cliente_cidade'] ?? 'Não informado'),
                 'state_name' => self::nomeEstado($cliente['cliente_uf'] ?? null),
-                'latitude' => 0,
-                'longitude' => 0,
+                'latitude' => $coordenadas['latitude'],
+                'longitude' => $coordenadas['longitude'],
             ],
         ];
 
@@ -69,6 +71,111 @@ class LojaService
         $loja->save();
 
         return $loja;
+    }
+
+    /**
+     * O Mercado Pago exige latitude/longitude reais em `location` — rejeita
+     * explicitamente o par (0,0) ("store coordinates ... are invalid") que
+     * era usado antes como placeholder. Geocodifica o endereço do cliente,
+     * tentando primeiro pelo CEP (BrasilAPI) e depois pelo endereço textual
+     * (Nominatim/OpenStreetMap) como reforço — ambos gratuitos, sem chave de
+     * API. Lança exceção se nenhum dos dois conseguir localizar coordenadas
+     * válidas, em vez de silenciosamente mandar (0,0) de novo.
+     */
+    private static function obterCoordenadas($cliente): array
+    {
+        $cep = preg_replace('/\D/', '', $cliente['cliente_cep'] ?? '');
+
+        if (strlen($cep) === 8) {
+            $coordenadas = self::coordenadasPorCep($cep);
+
+            if ($coordenadas !== null) {
+                return $coordenadas;
+            }
+        }
+
+        $coordenadas = self::coordenadasPorEndereco($cliente);
+
+        if ($coordenadas !== null) {
+            return $coordenadas;
+        }
+
+        throw new \Exception('Não foi possível obter as coordenadas geográficas do endereço do cliente (CEP/endereço podem estar incompletos ou incorretos) — o Mercado Pago exige localização válida para criar a Loja.');
+    }
+
+    private static function coordenadasPorCep(string $cep): ?array
+    {
+        try {
+            $resposta = Http::timeout(5)->get("https://brasilapi.com.br/api/cep/v2/{$cep}");
+
+            if (!$resposta->successful()) {
+                return null;
+            }
+
+            $dados = $resposta->json();
+            $lat = $dados['location']['coordinates']['latitude'] ?? null;
+            $lng = $dados['location']['coordinates']['longitude'] ?? null;
+
+            return self::validarCoordenadas($lat, $lng);
+        } catch (\Throwable $e) {
+            \Log::warning('Falha ao geocodificar CEP via BrasilAPI: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private static function coordenadasPorEndereco($cliente): ?array
+    {
+        $endereco = trim(implode(', ', array_filter([
+            self::normalizarTexto($cliente['cliente_logradouro'] ?? null),
+            $cliente['cliente_numero'] ?? null,
+            self::normalizarTexto($cliente['cliente_cidade'] ?? null),
+            $cliente['cliente_uf'] ?? null,
+            'Brasil',
+        ])));
+
+        if ($endereco === '') {
+            return null;
+        }
+
+        try {
+            // Nominatim exige um User-Agent identificável (política de uso) e
+            // no máximo ~1 req/s -- uso aqui é raro (uma vez por cliente).
+            $resposta = Http::withHeaders(['User-Agent' => 'ProjetoMaquina-SwiftPay/1.0'])
+                ->timeout(5)
+                ->get('https://nominatim.openstreetmap.org/search', [
+                    'format' => 'json',
+                    'q' => $endereco,
+                    'countrycodes' => 'br',
+                    'limit' => 1,
+                ]);
+
+            if (!$resposta->successful() || empty($resposta->json())) {
+                return null;
+            }
+
+            $primeiro = $resposta->json()[0];
+
+            return self::validarCoordenadas($primeiro['lat'] ?? null, $primeiro['lon'] ?? null);
+        } catch (\Throwable $e) {
+            \Log::warning('Falha ao geocodificar endereço via Nominatim: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private static function validarCoordenadas($lat, $lng): ?array
+    {
+        if ($lat === null || $lng === null) {
+            return null;
+        }
+
+        $lat = (float) $lat;
+        $lng = (float) $lng;
+
+        if ($lat === 0.0 && $lng === 0.0) {
+            return null;
+        }
+
+        return ['latitude' => $lat, 'longitude' => $lng];
     }
 
     /**
