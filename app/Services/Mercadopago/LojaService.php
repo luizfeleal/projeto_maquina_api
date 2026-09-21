@@ -35,12 +35,12 @@ class LojaService
         $externalStoreId = 'CLI' . $idCliente;
 
         $payload = [
-            'name' => $cliente['cliente_nome'] ?? $externalStoreId,
+            'name' => self::normalizarTexto($cliente['cliente_nome'] ?? $externalStoreId),
             'external_id' => $externalStoreId,
             'location' => [
-                'street_name' => $cliente['cliente_logradouro'] ?? 'Não informado',
+                'street_name' => self::normalizarTexto($cliente['cliente_logradouro'] ?? 'Não informado'),
                 'street_number' => $cliente['cliente_numero'] ?? 'S/N',
-                'city_name' => $cliente['cliente_cidade'] ?? 'Não informado',
+                'city_name' => self::normalizarTexto($cliente['cliente_cidade'] ?? 'Não informado'),
                 'state_name' => self::nomeEstado($cliente['cliente_uf'] ?? null),
                 'latitude' => 0,
                 'longitude' => 0,
@@ -111,5 +111,50 @@ class LojaService
         $uf = strtoupper(trim((string) $uf));
 
         return $estados[$uf] ?? 'São Paulo';
+    }
+
+    /**
+     * Corrige texto com acentos em forma "decomposta" (letra base + marca de
+     * combinação Unicode, ex.: "e" + ́ em vez do caractere único "é") — chega
+     * assim às vezes dependendo da origem do dado (comum vindo de macOS). É
+     * visualmente idêntico ao normal, mas a API de Lojas do Mercado Pago
+     * valida `city_name` contra uma lista fechada por comparação exata de
+     * bytes, e rejeita a forma decomposta mesmo quando o nome está correto
+     * (ex.: "Santo André" sendo recusado).
+     */
+    private static function normalizarTexto(?string $valor): string
+    {
+        $valor = trim((string) $valor);
+
+        if ($valor === '') {
+            return $valor;
+        }
+
+        if (class_exists(\Normalizer::class)) {
+            $normalizado = \Normalizer::normalize($valor, \Normalizer::FORM_C);
+
+            if ($normalizado !== false) {
+                return $normalizado;
+            }
+        }
+
+        // Fallback sem depender da extensão intl: cobre manualmente as
+        // combinações letra+diacrítico mais comuns em português.
+        $decompostoParaComposto = [
+            "a\u{0301}" => 'á', "a\u{0300}" => 'à', "a\u{0302}" => 'â', "a\u{0303}" => 'ã',
+            "e\u{0301}" => 'é', "e\u{0300}" => 'è', "e\u{0302}" => 'ê',
+            "i\u{0301}" => 'í', "i\u{0300}" => 'ì',
+            "o\u{0301}" => 'ó', "o\u{0300}" => 'ò', "o\u{0302}" => 'ô', "o\u{0303}" => 'õ',
+            "u\u{0301}" => 'ú', "u\u{0300}" => 'ù', "u\u{0308}" => 'ü',
+            "c\u{0327}" => 'ç',
+            "A\u{0301}" => 'Á', "A\u{0300}" => 'À', "A\u{0302}" => 'Â', "A\u{0303}" => 'Ã',
+            "E\u{0301}" => 'É', "E\u{0300}" => 'È', "E\u{0302}" => 'Ê',
+            "I\u{0301}" => 'Í', "I\u{0300}" => 'Ì',
+            "O\u{0301}" => 'Ó', "O\u{0300}" => 'Ò', "O\u{0302}" => 'Ô', "O\u{0303}" => 'Õ',
+            "U\u{0301}" => 'Ú', "U\u{0300}" => 'Ù', "U\u{0308}" => 'Ü',
+            "C\u{0327}" => 'Ç',
+        ];
+
+        return strtr($valor, $decompostoParaComposto);
     }
 }
