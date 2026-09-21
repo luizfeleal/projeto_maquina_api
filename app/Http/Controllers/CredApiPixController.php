@@ -86,8 +86,10 @@ class CredApiPixController extends Controller
                 return response()->json(['message' => 'Credencial cadastrada com sucesso!', 'response' => $cred, 'loja_mercadopago' => $loja], 201);
             });
         } catch (ValidationException $e) {
+            \Log::error('Erro de validação ao cadastrar credencial: ' . $e->getMessage());
             return response()->json(['message' => 'Erro de validação: ' . $e->getMessage()], 400);
         } catch (Exception $e) {
+            \Log::error('Erro ao cadastrar credencial (id_cliente=' . ($dados['id_cliente'] ?? '?') . ', tipo_cred=' . ($dados['tipo_cred'] ?? '?') . '): ' . $e->getMessage());
             return response()->json(['message' => 'Houve um erro ao tentar cadastrar a credencial.' . $e->getMessage()], 500);
         }
     }
@@ -163,6 +165,7 @@ class CredApiPixController extends Controller
                 return response()->json(['message' => 'Credencial atualizada com sucesso!', 'response' => $cred, 'loja_mercadopago' => $loja], 200);
             });
         } catch (Exception $e) {
+            \Log::error("Erro ao atualizar credencial de id $id: " . $e->getMessage());
             return response()->json(["response" => "Houve um erro ao tentar atualizar a credencial de id: $id.", "error" => $e->getMessage()], 500);
         }
     }
