@@ -144,11 +144,10 @@ class PosService
     /**
      * Busca o POS de uma loja pelo external_id (usado quando a criação falha
      * porque já existe um caixa com esse external_id — ver criarOuObterPos).
-     * A listagem pode não trazer o qr_response completo, então buscamos o
-     * detalhe pelo id em seguida pra garantir o qr_code/image necessário.
-     * Log completo das duas respostas de propósito, mesmo motivo do
-     * LojaService::buscarLojaPorExternalId: não confirmado em sandbox o
-     * formato exato de nenhuma das duas.
+     * Confirmado em sandbox que GET /v2/pos já retorna o qr_response completo
+     * na própria listagem, mas buscamos o detalhe pelo id mesmo assim como
+     * garantia (evita depender de um comportamento que pode não valer pra
+     * todo tipo de POS/config).
      */
     private static function buscarPosPorExternalId(string $storeId, string $externalId, string $accessToken): ?array
     {
@@ -166,7 +165,9 @@ class PosService
         }
 
         $corpo = $resposta->json();
-        $resultados = $corpo['results'] ?? (array_is_list($corpo ?? []) ? $corpo : []);
+        // GET /v2/pos envelopa a lista em `data` (confirmado em sandbox), diferente
+        // de GET /users/{id}/stores/search, que usa `results` — cobrimos os dois.
+        $resultados = $corpo['data'] ?? $corpo['results'] ?? (array_is_list($corpo ?? []) ? $corpo : []);
         $encontrado = $resultados[0] ?? null;
 
         if (empty($encontrado['id'])) {
