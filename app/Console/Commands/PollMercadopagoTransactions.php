@@ -14,11 +14,17 @@ use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Net\MPSearchRequest;
 
 /**
- * Fallback/reconciliação para o webhook do Mercado Pago: varre os pagamentos
- * aprovados de cada cliente via /v1/payments/search e processa qualquer um que
- * o webhook não tenha entregue. É um mecanismo temporário — o canal principal
- * continua sendo o webhook (App\Http\Controllers\Mercadopago\Webhooks\WebhookController);
- * este comando existe só pra cobrir falhas de entrega.
+ * Reconciliação dos pagamentos do Mercado Pago: varre os pagamentos aprovados
+ * de cada cliente via /v1/payments/search e processa qualquer um que o
+ * webhook não tenha entregue.
+ *
+ * Não é só um fallback: o QR estático das máquinas é criado em modo
+ * `standalone` (valor livre — ver App\Services\Mercadopago\PosService), que
+ * não tem order/PDV integrado via API e por isso não garante notificação via
+ * webhook (App\Http\Controllers\Mercadopago\Webhooks\WebhookController). Para
+ * esses pagamentos, este polling é o caminho que garante a confirmação, não
+ * um mecanismo temporário — se algum dia todas as máquinas passarem a operar
+ * em modo integrado (`pdv`/orders), aí sim ele volta a ser só reconciliação.
  *
  * Reaproveita a mesma lógica de negócio do webhook (NotificacaoService::
  * processarPagamentoAprovado), então idempotência, liberação de jogada e
@@ -28,7 +34,7 @@ class PollMercadopagoTransactions extends Command
 {
     protected $signature = 'mercadopago:poll-transactions';
 
-    protected $description = 'Busca pagamentos aprovados do Mercado Pago via polling (fallback de reconciliação para quando o webhook falha)';
+    protected $description = 'Busca e processa pagamentos aprovados do Mercado Pago via polling (garante a confirmação de pagamentos em QRs standalone, que o webhook pode não entregar)';
 
     /**
      * Margem de sobreposição na janela de busca: reconsulta um pouco antes do

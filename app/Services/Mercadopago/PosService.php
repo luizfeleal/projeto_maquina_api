@@ -40,7 +40,15 @@ class PosService
             'external_id' => $externalPosId,
             'config' => [
                 'qr' => [
-                    'operating_mode' => 'pdv',
+                    // 'standalone': QR estático de valor livre — o cliente digita o
+                    // valor no próprio app do Mercado Pago ao escanear, igual ao
+                    // fluxo da chave aleatória Efí. Diferente do modo 'pdv' (atendido,
+                    // requer operador), este não tem order/PDV integrado via API, então
+                    // não há garantia de notificação via webhook — o polling de
+                    // reconciliação (App\Console\Commands\PollMercadopagoTransactions)
+                    // passa a ser o caminho que garante a confirmação do pagamento,
+                    // não só um fallback do webhook.
+                    'operating_mode' => 'standalone',
                 ],
             ],
         ];
