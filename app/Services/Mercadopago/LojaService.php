@@ -66,11 +66,22 @@ class LojaService
         \Log::info('Criação de Loja Mercado Pago -----------------');
         \Log::info($resposta->body());
 
-        if ($resposta->failed()) {
-            throw new \Exception('Falha ao criar a Loja no Mercado Pago: ' . $resposta->body());
-        }
+        if ($resposta->status() === 400 && str_contains($resposta->json()['message'] ?? '', 'is already assigned')) {
+            // A conta já tem uma loja com este external_id — normalmente sobra de uma
+            // tentativa anterior que criou a loja no Mercado Pago com sucesso, mas não
+            // chegou a salvar (ou salvou com a conta errada) em mercadopago_loja. Em vez
+            // de falhar, buscamos a loja já existente na conta e reaproveitamos.
+            \Log::warning("External_id $externalStoreId já existe na conta $mpUserId; buscando a loja existente em vez de criar outra.");
+            $dados = self::buscarLojaPorExternalId($mpUserId, $externalStoreId, $accessToken);
 
-        $dados = $resposta->json();
+            if ($dados === null) {
+                throw new \Exception("A conta $mpUserId já tem uma loja com external_id $externalStoreId, mas não foi possível localizá-la via busca.");
+            }
+        } elseif ($resposta->failed()) {
+            throw new \Exception('Falha ao criar a Loja no Mercado Pago: ' . $resposta->body());
+        } else {
+            $dados = $resposta->json();
+        }
 
         // Atualiza a loja existente em vez de inserir outra linha quando o motivo
         // de estarmos aqui foi o mp_user_id não bater (ver checagem acima) — mantém
@@ -86,6 +97,33 @@ class LojaService
         $loja->save();
 
         return $loja;
+    }
+
+    /**
+     * Busca a loja de uma conta pelo external_id (usado quando a criação falha
+     * porque a conta já tem uma loja com esse external_id — ver criarOuObterLoja).
+     * Log completo do corpo da resposta de propósito: não confirmado em sandbox
+     * se `results` vem sempre nesse formato, então isso facilita ajustar se
+     * o parsing abaixo não achar nada mesmo com a busca respondendo 200.
+     */
+    private static function buscarLojaPorExternalId(string $mpUserId, string $externalId, string $accessToken): ?array
+    {
+        $resposta = Http::withToken($accessToken)
+            ->get(self::BASE_URL . '/users/' . $mpUserId . '/stores/search', [
+                'external_id' => $externalId,
+            ]);
+
+        \Log::info('Busca de Loja Mercado Pago por external_id -----------------');
+        \Log::info($resposta->body());
+
+        if (!$resposta->successful()) {
+            return null;
+        }
+
+        $corpo = $resposta->json();
+        $resultados = $corpo['results'] ?? (array_is_list($corpo ?? []) ? $corpo : []);
+
+        return $resultados[0] ?? null;
     }
 
     /**
