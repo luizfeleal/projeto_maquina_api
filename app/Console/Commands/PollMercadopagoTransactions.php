@@ -101,6 +101,9 @@ class PollMercadopagoTransactions extends Command
             throw new \Exception("Falha ao buscar pagamentos no Mercado Pago (HTTP {$e->getStatusCode()}): {$conteudo}");
         }
 
+        $processados = 0;
+        $totalEncontrado = count($resultado->results ?? []);
+
         foreach ($resultado->results ?? [] as $payment) {
             if ($payment->status !== 'approved') {
                 continue;
@@ -122,9 +125,16 @@ class PollMercadopagoTransactions extends Command
 
             $dadoTransacao = NotificacaoService::montarDadosTransacao($paymentArray);
             $resultadoProcessamento = NotificacaoService::processarPagamentoAprovado($dadoTransacao);
+            $processados++;
 
             \Log::info("[Polling Mercado Pago] Resultado do processamento do pagamento {$payment->id} (credencial {$credencial->id_cred_api_pix}): " . json_encode($resultadoProcessamento));
         }
+
+        // Log de confirmação sempre presente, mesmo sem nada novo pra
+        // processar: deixa rastro de que a consulta rodou (e não falhou
+        // silenciosamente antes de chegar aqui), sem precisar inferir isso
+        // pela ausência de outras linhas de log.
+        \Log::info("[Polling Mercado Pago] Credencial {$credencial->id_cred_api_pix}: janela {$inicio->toIso8601String()} a {$fim->toIso8601String()}, {$totalEncontrado} pagamento(s) retornado(s) pela API, {$processados} novo(s) processado(s).");
 
         $credencial->update(['mp_ultima_consulta' => $fim]);
     }
