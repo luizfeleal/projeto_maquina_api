@@ -3,8 +3,16 @@
 namespace App\Services\Mercadopago;
 
 use App\Models\CredApiPix;
+use App\Models\ExtratoMaquina;
+use App\Models\Logs;
+use App\Models\MaquinaCartao;
+use App\Models\Maquinas;
 use App\Services\Efi\DescriptografaCredService;
+use App\Services\Hardware\AuthService;
+use App\Services\Hardware\JogadasService;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\Pool;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use MercadoPago\Exceptions\InvalidWebhookSignatureException;
 use MercadoPago\Webhook\WebhookSignatureValidator;
@@ -160,6 +168,19 @@ class NotificacaoService
             return ['http_code' => 200, 'resposta' => null, 'aprovado' => false];
         }
 
+        return ['http_code' => 200, 'resposta' => self::montarDadosTransacao($payment), 'aprovado' => true];
+    }
+
+    /**
+     * Monta a estrutura de crédito/débito/device a partir do array de um
+     * payment do Mercado Pago (mesmo formato retornado por
+     * Http::get(...)->json() e pelo polling de reconciliação em
+     * App\Console\Commands\PollMercadopagoTransactions, que converte o
+     * resultado do SDK pra array antes de chamar este método). Público para
+     * ser reaproveitado pelos dois caminhos.
+     */
+    public static function montarDadosTransacao(array $payment): array
+    {
         $codigo_transacao = (string) $payment['id'];
         $valor_transacao = $payment['transaction_amount'];
         $valor_taxa = self::calcularTaxa($payment, $valor_transacao);
@@ -182,13 +203,152 @@ class NotificacaoService
             'extrato_operacao' => 'D'
         ];
 
-        $dado_transacao = [
+        return [
             'credito' => $data_credito,
             'debito' => $data_debito,
             'device' => $device_info
         ];
+    }
 
-        return ['http_code' => 200, 'resposta' => $dado_transacao, 'aprovado' => true];
+    /**
+     * Processa um pagamento já confirmado como aprovado: idempotência (com
+     * lock por transação, pra proteger contra o Mercado Pago reenviando a
+     * notificação enquanto a primeira ainda está em andamento, e contra o
+     * polling de reconciliação pegando o mesmo pagamento no meio do caminho),
+     * resolução da máquina pelo device (pos_id), lançamento no extrato e
+     * liberação da jogada no hardware. Reaproveitado tanto pelo
+     * WebhookController quanto pelo polling
+     * (App\Console\Commands\PollMercadopagoTransactions).
+     *
+     * @param array{credito: array, debito: array, device: mixed} $resposta
+     * @return array{status: string, liberado?: bool, hardware?: mixed}
+     */
+    public static function processarPagamentoAprovado(array $resposta): array
+    {
+        $codigoTransacao = $resposta['credito']['id_end_to_end'];
+        $valorRecebido = $resposta['credito']['extrato_operacao_valor'] ?? null;
+        $deviceInfo = $resposta['device'] ?? null;
+
+        \Log::info("Pagamento recebido para processamento: transacao=$codigoTransacao, valor=$valorRecebido, device=$deviceInfo");
+
+        $lock = Cache::lock("webhook:mercadopago:transacao:$codigoTransacao", 30);
+
+        try {
+            $lock->block(10);
+        } catch (LockTimeoutException $e) {
+            \Log::info("Timeout aguardando lock do pagamento $codigoTransacao; outra requisição já está processando essa notificação.");
+            return ['status' => 'ja_processado'];
+        }
+
+        try {
+            if (ExtratoMaquina::where('id_end_to_end', $codigoTransacao)->exists()) {
+                \Log::info("Notificação duplicada do Mercado Pago para o pagamento $codigoTransacao, já processada anteriormente.");
+                return ['status' => 'ja_processado'];
+            }
+
+            $liberarJogada = true;
+            $device_numero = $resposta['device'];
+
+            \Log::info('---------Numero device --------');
+            \Log::info($device_numero);
+
+            $device = MaquinaCartao::where('device', $device_numero)->where('status', 1)->get()->toArray();
+            \Log::info('---------Device Encontrado--------');
+            \Log::info($device);
+            if (empty($device)) {
+                Logs::create([
+                    "descricao" => "Erro ao tentar liberar uma jogada, device de número: $device_numero não foi encontrado no sistema.",
+                    "status" => "erro",
+                    "acao" => "liberar jogada",
+                    "id_maquina" => 0
+                ]);
+                return ['status' => 'device_nao_encontrado'];
+            }
+            $id_maquina = $device[0]['id_maquina'];
+
+            \Log::info('---------ID Maquina pelo device--------');
+            \Log::info($id_maquina);
+
+            $resposta['credito']['id_maquina'] = $id_maquina;
+            $resposta['debito']['id_maquina'] = $id_maquina;
+
+            $maquina = Maquinas::where('id_maquina', $id_maquina)->get();
+            \Log::info('--------Máquina encontrada cartão------');
+            \Log::info($maquina);
+            if (isset($maquina[0])) {
+                if (!empty($maquina) && $maquina[0]['bloqueio_jogada_mercadopago'] == 1) {
+                    $liberarJogada = false;
+                    Logs::create([
+                        "descricao" => "Erro ao tentar liberar jogadas! A máquina de cartão se encontra como bloqueada para liberar jogadas por maquininha de cartão (Mercado Pago).",
+                        "status" => "erro",
+                        "acao" => "liberar jogada",
+                        "id_maquina" => $id_maquina
+                    ]);
+                }
+            } else {
+                $liberarJogada = false;
+                Logs::create([
+                    "descricao" => "Erro ao tentar liberar jogadas! Não foi possível encontrar a máquina. Verifique o registro!",
+                    "status" => "erro",
+                    "acao" => "liberar jogada",
+                    "id_maquina" => $id_maquina
+                ]);
+            }
+
+            // Registramos o extrato assim que decidimos processar o pagamento, antes de
+            // acionar o hardware: se o Mercado Pago reenviar a mesma notificação (retry)
+            // ou o polling encontrar o mesmo pagamento de novo, a checagem de
+            // idempotência acima passa a barrar o reprocessamento.
+            $dadosExtrato = [
+                $resposta['credito'],
+                $resposta['debito']
+            ];
+            ExtratoMaquina::insert($dadosExtrato);
+
+            $tentativas = 0;
+            $maxTentativas = env('TENTATIVAS_PERSISTENCIA_JOGADA');
+            $respostaHardware = null;
+            do {
+                if ($liberarJogada == true) {
+                    $valor = $resposta['credito']['extrato_operacao_valor'];
+                    $idE2E = $resposta['credito']['id_end_to_end'];
+
+                    $maquina = Maquinas::find($id_maquina);
+
+                    $id_placa = $maquina['id_placa'];
+
+                    $token = AuthService::coletarToken();
+                    $respostaHardware = JogadasService::liberarJogada($id_placa, $valor, $idE2E, $token);
+                    $tentativas++;
+
+                    if ($respostaHardware['http_code'] == 200) {
+                        \Log::info("Jogada liberada com sucesso: transacao=$idE2E, id_maquina=$id_maquina, id_placa=$id_placa, valor=$valor, tentativa=$tentativas");
+                        break;
+                    }
+
+                    \Log::warning("Falha ao liberar jogada (tentativa $tentativas): transacao=$idE2E, id_maquina=$id_maquina, id_placa=$id_placa, resposta=" . json_encode($respostaHardware));
+
+                    if ($tentativas >= $maxTentativas) {
+                        \Log::error("Jogada NÃO liberada após $tentativas tentativa(s): transacao=$idE2E, id_maquina=$id_maquina, id_placa=$id_placa");
+                        Logs::create([
+                            "descricao" => "Erro ao tentar liberar jogadas, número de tentativas de comunicação com a máquina foi excedido.",
+                            "status" => "erro",
+                            "acao" => "liberar jogada",
+                            "id_maquina" => $id_maquina
+                        ]);
+
+                        //Fazer o estorno aqui
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            } while ($respostaHardware['http_code'] != 200);
+
+            return ['status' => 'processado', 'liberado' => $liberarJogada, 'hardware' => $respostaHardware];
+        } finally {
+            $lock->release();
+        }
     }
 
     /**
