@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Mercadopago;
 
 use App\Http\Controllers\Controller;
 use App\Models\CredApiPix;
-use App\Models\MercadopagoLoja;
 use App\Models\MercadopagoPos;
 use App\Services\Efi\DescriptografaCredService;
+use App\Services\Mercadopago\LojaService;
 use App\Services\Mercadopago\PosService;
 use Exception;
 use Illuminate\Http\Request;
@@ -63,16 +63,17 @@ class QrController extends Controller
                 return response()->json(['message' => 'Não foi encontrada uma credencial do Mercado Pago registrada para o cliente informado.'], 400);
             }
 
-            $loja = MercadopagoLoja::where('id_cliente', $idCliente)->first();
-
-            if (!$loja) {
-                return response()->json(['message' => 'A loja do Mercado Pago ainda não foi cadastrada para este cliente. Cadastre a loja antes de criar o QR Code.'], 400);
-            }
-
             $credencialDescriptografada = DescriptografaCredService::descriptografarCred($credencial->toArray());
             $accessToken = $credencialDescriptografada['client_secret'];
 
-            return DB::transaction(function () use ($idCliente, $idLocal, $idMaquina, $loja, $accessToken) {
+            return DB::transaction(function () use ($idCliente, $idLocal, $idMaquina, $accessToken) {
+                // criarOuObterLoja (em vez de ler MercadopagoLoja direto) garante que,
+                // se a loja salva pertencer a outra conta do Mercado Pago (token
+                // trocado depois da loja já criada), ela seja corrigida aqui — não só
+                // no momento em que a credencial é salva. Sem isso, este endpoint
+                // reaproveitava a loja errada e a criação do POS falhava sempre com
+                // "internal_error_check_store_owner".
+                $loja = LojaService::criarOuObterLoja($idCliente, $accessToken);
                 $pos = PosService::criarOuObterPos($idMaquina, $idLocal, $idCliente, $loja, $accessToken);
 
                 return response()->json(['message' => 'QR Code do Mercado Pago cadastrado com sucesso!', 'response' => $pos], 201);
