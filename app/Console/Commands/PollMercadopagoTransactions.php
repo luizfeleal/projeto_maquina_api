@@ -9,6 +9,7 @@ use App\Services\Mercadopago\NotificacaoService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\Exceptions\MPApiException;
 use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Net\MPSearchRequest;
 
@@ -79,13 +80,26 @@ class PollMercadopagoTransactions extends Command
 
         $searchRequest = new MPSearchRequest(50, 0, [
             'range' => 'date_created',
-            'begin_date' => $inicio->format('Y-m-d\TH:i:sP'),
-            'end_date' => $fim->format('Y-m-d\TH:i:sP'),
+            // A API do Mercado Pago é estrita com o formato de data desses
+            // filtros: exige milissegundos (.v). Sem isso, /v1/payments/search
+            // responde 400 e o SDK só expõe a mensagem genérica "Api error.
+            // Check response for details" (ver MPApiException abaixo).
+            'begin_date' => $inicio->format('Y-m-d\TH:i:s.vP'),
+            'end_date' => $fim->format('Y-m-d\TH:i:s.vP'),
             'sort' => 'date_approved',
             'criteria' => 'desc',
         ]);
 
-        $resultado = (new PaymentClient())->search($searchRequest);
+        try {
+            $resultado = (new PaymentClient())->search($searchRequest);
+        } catch (MPApiException $e) {
+            // A mensagem padrão do SDK ("Api error. Check response for details")
+            // não diz nada; o corpo de verdade (motivo real, ex.: token inválido/
+            // expirado, filtro malformado) só vem em getApiResponse()->getContent()
+            // (mesmo problema já resolvido em ContaService::obterUserId).
+            $conteudo = json_encode($e->getApiResponse()->getContent());
+            throw new \Exception("Falha ao buscar pagamentos no Mercado Pago (HTTP {$e->getStatusCode()}): {$conteudo}");
+        }
 
         foreach ($resultado->results ?? [] as $payment) {
             if ($payment->status !== 'approved') {
