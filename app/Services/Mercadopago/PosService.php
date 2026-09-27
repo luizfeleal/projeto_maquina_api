@@ -60,11 +60,25 @@ class PosService
         \Log::info('Criação de POS Mercado Pago -----------------');
         \Log::info($resposta->body());
 
-        if ($resposta->failed()) {
+        if (self::erroPosJaExiste($resposta)) {
+            // A conta já tem um caixa com este external_id — mesma situação da Loja
+            // (ver LojaService::criarOuObterLoja): provável sobra de uma tentativa
+            // anterior que criou o POS no Mercado Pago com sucesso, mas não chegou a
+            // salvar em mercadopago_pos (ex.: falhou depois, ao montar a imagem do QR,
+            // ou a transação do banco foi revertida). Em vez de falhar, buscamos o POS
+            // já existente na conta e reaproveitamos.
+            \Log::warning("External_id $externalPosId já existe na conta (store {$loja->mp_store_id}); buscando o POS existente em vez de criar outro.");
+            $dados = self::buscarPosPorExternalId($loja->mp_store_id, $externalPosId, $accessToken);
+
+            if ($dados === null) {
+                throw new \Exception("Já existe um POS com external_id $externalPosId na conta do Mercado Pago, mas não foi possível localizá-lo via busca.");
+            }
+        } elseif ($resposta->failed()) {
             throw new \Exception('Falha ao criar o POS no Mercado Pago: ' . $resposta->body());
+        } else {
+            $dados = $resposta->json();
         }
 
-        $dados = $resposta->json();
         $mpPosId = (string) $dados['id'];
 
         // O formato exato de qr_response deve ser conferido em sandbox antes de ir
@@ -74,7 +88,10 @@ class PosService
             ?? null;
 
         if (empty($qrData)) {
-            throw new \Exception('POS criado no Mercado Pago, mas a resposta não trouxe o QR Code (qr_response). Resposta: ' . $resposta->body());
+            // json_encode($dados) em vez de $resposta->body(): no caminho de
+            // reaproveitamento (pos_already_exists), $resposta ainda é a tentativa de
+            // criação que falhou, não o POS que estamos de fato usando.
+            throw new \Exception('POS do Mercado Pago sem qr_response utilizável (qr_code/image). Dados: ' . json_encode($dados));
         }
 
         $obQrCode = new MpdfQrCode($qrData);
@@ -99,6 +116,70 @@ class PosService
         self::vincularMaquinaCartao($idMaquina, $externalPosId);
 
         return $pos;
+    }
+
+    /**
+     * Detecta especificamente o erro "pos_already_exists" (a mensagem vem em
+     * `errors[].code`, formato diferente do erro de external_id da Loja, que vem
+     * em `message`). Não confiamos no HTTP status (não confirmado em sandbox se é
+     * sempre 400) — checamos o código do erro no corpo independente do status.
+     */
+    private static function erroPosJaExiste($resposta): bool
+    {
+        if ($resposta->successful()) {
+            return false;
+        }
+
+        $erros = $resposta->json()['errors'] ?? [];
+
+        foreach ($erros as $erro) {
+            if (($erro['code'] ?? null) === 'pos_already_exists') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Busca o POS de uma loja pelo external_id (usado quando a criação falha
+     * porque já existe um caixa com esse external_id — ver criarOuObterPos).
+     * A listagem pode não trazer o qr_response completo, então buscamos o
+     * detalhe pelo id em seguida pra garantir o qr_code/image necessário.
+     * Log completo das duas respostas de propósito, mesmo motivo do
+     * LojaService::buscarLojaPorExternalId: não confirmado em sandbox o
+     * formato exato de nenhuma das duas.
+     */
+    private static function buscarPosPorExternalId(string $storeId, string $externalId, string $accessToken): ?array
+    {
+        $resposta = Http::withToken($accessToken)
+            ->get(self::BASE_URL . '/v2/pos', [
+                'external_id' => $externalId,
+                'store_id' => $storeId,
+            ]);
+
+        \Log::info('Busca de POS Mercado Pago por external_id -----------------');
+        \Log::info($resposta->body());
+
+        if (!$resposta->successful()) {
+            return null;
+        }
+
+        $corpo = $resposta->json();
+        $resultados = $corpo['results'] ?? (array_is_list($corpo ?? []) ? $corpo : []);
+        $encontrado = $resultados[0] ?? null;
+
+        if (empty($encontrado['id'])) {
+            return null;
+        }
+
+        $respostaDetalhe = Http::withToken($accessToken)
+            ->get(self::BASE_URL . '/v2/pos/' . $encontrado['id']);
+
+        \Log::info('Detalhe do POS Mercado Pago encontrado -----------------');
+        \Log::info($respostaDetalhe->body());
+
+        return $respostaDetalhe->successful() ? $respostaDetalhe->json() : $encontrado;
     }
 
     /**
