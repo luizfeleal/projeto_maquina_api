@@ -22,13 +22,24 @@ class LojaService
      */
     public static function criarOuObterLoja(int $idCliente, string $accessToken): MercadopagoLoja
     {
+        $mpUserId = ContaService::obterUserId($accessToken);
+
         $lojaExistente = MercadopagoLoja::where('id_cliente', $idCliente)->first();
 
         if ($lojaExistente) {
-            return $lojaExistente;
-        }
+            if ((string) $lojaExistente->mp_user_id === $mpUserId) {
+                return $lojaExistente;
+            }
 
-        $mpUserId = ContaService::obterUserId($accessToken);
+            // A loja salva pertence a outra conta do Mercado Pago (ex.: token de
+            // teste substituído pelo de produção, ou credencial recriada no
+            // painel do cliente). Reaproveitar esse store_id faz a criação do
+            // POS falhar depois com "internal_error_check_store_owner" — o
+            // Mercado Pago recusa vincular um caixa a uma loja de outra conta.
+            // Recriamos a loja para a conta do token atual em vez de propagar
+            // esse erro só na hora de gerar o QR.
+            \Log::warning("Loja Mercado Pago do cliente $idCliente pertence a outra conta (mp_user_id salvo: {$lojaExistente->mp_user_id}, atual: $mpUserId). Recriando para a conta correta.");
+        }
 
         $cliente = Clientes::findOrFail($idCliente);
 
@@ -61,7 +72,11 @@ class LojaService
 
         $dados = $resposta->json();
 
-        $loja = new MercadopagoLoja();
+        // Atualiza a loja existente em vez de inserir outra linha quando o motivo
+        // de estarmos aqui foi o mp_user_id não bater (ver checagem acima) — mantém
+        // o mesmo id (e, com isso, as referências existentes em mercadopago_pos.
+        // id_mercadopago_loja), só troca para a conta correta.
+        $loja = $lojaExistente ?? new MercadopagoLoja();
         $loja->fill([
             'id_cliente' => $idCliente,
             'mp_user_id' => $mpUserId,
