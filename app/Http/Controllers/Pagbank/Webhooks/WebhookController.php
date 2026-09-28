@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use App\Services\PagBank\NotificacaoService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 
 
 
@@ -43,6 +45,35 @@ class WebhookController extends Controller
 
             \Log::info('Notificacao webhook pagabank ------------------');
             \Log::info($notificacao);
+
+            $codigoTransacao = $notificacao['resposta']['credito']['id_end_to_end'] ?? null;
+
+            // Lock por transação: evita que duas notificações concorrentes para a mesma
+            // transação (ex.: o PagBank reenviando por timeout enquanto a primeira ainda
+            // está sendo processada) passem pela checagem de idempotência ao mesmo tempo,
+            // o que duplicaria o extrato e liberaria a jogada duas vezes.
+            $lock = $codigoTransacao !== null
+                ? Cache::lock("webhook:pagbank:transacao:$codigoTransacao", 30)
+                : null;
+
+            if ($lock !== null) {
+                try {
+                    $lock->block(10);
+                } catch (LockTimeoutException $e) {
+                    \Log::info("Timeout aguardando lock da transação $codigoTransacao; outra requisição já está processando essa notificação.");
+                    return true;
+                }
+            }
+
+            try {
+
+            // O PagBank pode reenviar a mesma notificação (retry por timeout, notificação
+            // duplicada etc.). Sem essa checagem, cada reenvio duplicava o par Cartão/Taxa
+            // no extrato e liberava a jogada novamente.
+            if ($codigoTransacao !== null && ExtratoMaquina::where('id_end_to_end', $codigoTransacao)->exists()) {
+                \Log::info("Notificação duplicada do PagBank para a transação $codigoTransacao, já processada anteriormente.");
+                return true;
+            }
 
             $device_numero = $notificacao['resposta']['device'];
 
@@ -104,6 +135,16 @@ class WebhookController extends Controller
                     ]);
                     return;
             }
+
+            // Registramos o extrato assim que decidimos processar a notificação, antes de
+            // acionar o hardware: se o PagBank reenviar a mesma notificação (retry), a
+            // checagem de idempotência no início do método passa a barrar o reprocessamento.
+            $dadosExtrato = [
+                $notificacao['resposta']['credito'],
+                $notificacao['resposta']['debito']
+            ];
+            ExtratoMaquina::insert($dadosExtrato);
+
             $tentativas = 0;
             $maxTentativas = env('TENTATIVAS_PERSISTENCIA_JOGADA');
             $resposta = null;
@@ -149,12 +190,11 @@ class WebhookController extends Controller
 
             } while ($resposta['http_code'] != 200);
 
-            $dadosExtrato = [
-                $notificacao['resposta']['credito'],
-                $notificacao['resposta']['debito']
-            ];
-
-            ExtratoMaquina::insert($dadosExtrato);
+            } finally {
+                if ($lock !== null) {
+                    $lock->release();
+                }
+            }
           }
         \Log::info('Liberação  de jogada----------------------');
         \Log::info($resposta);
