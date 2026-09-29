@@ -3,6 +3,7 @@
 namespace App\Services\Mercadopago;
 
 use MercadoPago\Client\User\UserClient;
+use MercadoPago\Exceptions\MPApiException;
 use MercadoPago\MercadoPagoConfig;
 
 class ContaService
@@ -15,7 +16,15 @@ class ContaService
     {
         MercadoPagoConfig::setAccessToken($accessToken);
 
-        $usuario = (new UserClient())->get();
+        try {
+            $usuario = (new UserClient())->get();
+        } catch (MPApiException $e) {
+            // A mensagem padrão do SDK ("Api error. Check response for details")
+            // não diz nada; o corpo de verdade (motivo real, ex.: token inválido/
+            // expirado) só vem em getApiResponse()->getContent().
+            $conteudo = json_encode($e->getApiResponse()->getContent());
+            throw new \Exception("Falha ao consultar usuário no Mercado Pago (HTTP {$e->getStatusCode()}): {$conteudo}");
+        }
 
         return (string) $usuario->id;
     }

@@ -16,3 +16,6 @@
 /.vscode/
 phpunit.xml
 .phpunit.result.cache
+
+# Cursor MCP config (may contain secrets, e.g. Mercado Pago Access Token)
+.cursor/mcp.json

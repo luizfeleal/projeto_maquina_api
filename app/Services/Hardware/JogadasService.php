@@ -33,6 +33,11 @@ class JogadasService
                     CURLOPT_POSTFIELDS => $data_string,
                     CURLOPT_RETURNTRANSFER => true,
                     CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $token],
+                    // Sem timeout aqui, uma falha de rede com o hardware prendia
+                    // essa chamada indefinidamente, estourando os ~22s que o
+                    // Mercado Pago espera pela resposta do webhook (timeout).
+                    CURLOPT_CONNECTTIMEOUT => 5,
+                    CURLOPT_TIMEOUT => 10,
                 )
             );
 
@@ -50,7 +55,12 @@ class JogadasService
 
             return $resposta;
         }catch(\Exception $e){
-            return $e;
+            // O chamador (WebhookController) espera sempre um array com
+            // "http_code" -- devolver a Exception quebraria o acesso
+            // `$resposta['http_code']` (TypeError) assim que o hardware
+            // falhar ou der timeout.
+            \Log::error('Erro ao liberar jogada no hardware: ' . $e->getMessage());
+            return ["http_code" => 0, "resposta" => $e->getMessage()];
         }
     }
 }
