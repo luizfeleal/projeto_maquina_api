@@ -184,7 +184,13 @@ class NotificacaoService
         $codigo_transacao = (string) $payment['id'];
         $valor_transacao = $payment['transaction_amount'];
         $valor_taxa = self::calcularTaxa($payment, $valor_transacao);
-        $device_info = $payment['pos_id'] ?? null;
+        // pos_id identifica o objeto POS na conta do Mercado Pago, não a
+        // maquininha física — pagamentos feitos direto na Point Smart (venda
+        // presencial) vêm com pos_id correto, mas nem sempre indexados/
+        // filtráveis, e QR standalone nem retorna pos_id. O serial_number do
+        // device é o identificador fixo do hardware, presente em todo
+        // pagamento feito via Point (point_of_interaction.type === 'POINT').
+        $device_info = $payment['point_of_interaction']['device']['serial_number'] ?? null;
 
         $data_credito = [
             'id_end_to_end' => $codigo_transacao,
@@ -215,7 +221,7 @@ class NotificacaoService
      * lock por transação, pra proteger contra o Mercado Pago reenviando a
      * notificação enquanto a primeira ainda está em andamento, e contra o
      * polling de reconciliação pegando o mesmo pagamento no meio do caminho),
-     * resolução da máquina pelo device (pos_id), lançamento no extrato e
+     * resolução da máquina pelo device (serial_number da Point), lançamento no extrato e
      * liberação da jogada no hardware. Reaproveitado tanto pelo
      * WebhookController quanto pelo polling
      * (App\Console\Commands\PollMercadopagoTransactions).
