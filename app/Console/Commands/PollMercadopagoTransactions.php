@@ -8,10 +8,7 @@ use App\Services\Efi\DescriptografaCredService;
 use App\Services\Mercadopago\NotificacaoService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use MercadoPago\Client\Payment\PaymentClient;
-use MercadoPago\Exceptions\MPApiException;
-use MercadoPago\MercadoPagoConfig;
-use MercadoPago\Net\MPSearchRequest;
+use Illuminate\Support\Facades\Http;
 
 /**
  * Reconciliação dos pagamentos do Mercado Pago: varre os pagamentos aprovados
@@ -77,63 +74,67 @@ class PollMercadopagoTransactions extends Command
         $dadosCredDescriptografado = DescriptografaCredService::descriptografarCred($credencial->toArray());
         $accessToken = $dadosCredDescriptografado['client_secret'];
 
-        MercadoPagoConfig::setAccessToken($accessToken);
-
         $fim = Carbon::now();
         $inicio = $credencial->mp_ultima_consulta
             ? Carbon::parse($credencial->mp_ultima_consulta)->subMinutes(self::MARGEM_SOBREPOSICAO_MINUTOS)
             : Carbon::now()->subMinutes(self::JANELA_INICIAL_MINUTOS);
 
-        $searchRequest = new MPSearchRequest(50, 0, [
-            'range' => 'date_created',
-            // A API do Mercado Pago é estrita com o formato de data desses
-            // filtros: exige milissegundos (.v). Sem isso, /v1/payments/search
-            // responde 400 e o SDK só expõe a mensagem genérica "Api error.
-            // Check response for details" (ver MPApiException abaixo).
-            'begin_date' => $inicio->format('Y-m-d\TH:i:s.vP'),
-            'end_date' => $fim->format('Y-m-d\TH:i:s.vP'),
-            'sort' => 'date_approved',
-            'criteria' => 'desc',
-        ]);
-
+        // Busca via HTTP cru (não via PaymentClient::search do SDK): o SDK
+        // desserializa a resposta em objetos tipados (Resources\Payment\
+        // PointOfInteraction) que não mapeiam o campo `device` — o
+        // serial_number da Point some silenciosamente ao converter o objeto
+        // de volta pra array. Chamando a API direto, preservamos a resposta
+        // crua (mesmo caminho que NotificacaoService::consultarPagamento já
+        // usa pro webhook) e point_of_interaction.device.serial_number chega
+        // intacto até montarDadosTransacao.
         try {
-            $resultado = (new PaymentClient())->search($searchRequest);
-        } catch (MPApiException $e) {
-            // A mensagem padrão do SDK ("Api error. Check response for details")
-            // não diz nada; o corpo de verdade (motivo real, ex.: token inválido/
-            // expirado, filtro malformado) só vem em getApiResponse()->getContent()
-            // (mesmo problema já resolvido em ContaService::obterUserId).
-            $conteudo = json_encode($e->getApiResponse()->getContent());
-            throw new \Exception("Falha ao buscar pagamentos no Mercado Pago (HTTP {$e->getStatusCode()}): {$conteudo}");
+            $resposta = Http::withToken($accessToken)
+                ->get('https://api.mercadopago.com/v1/payments/search', [
+                    'range' => 'date_created',
+                    // A API do Mercado Pago é estrita com o formato de data desses
+                    // filtros: exige milissegundos (.v). Sem isso, /v1/payments/search
+                    // responde 400 com uma mensagem genérica de erro.
+                    'begin_date' => $inicio->format('Y-m-d\TH:i:s.vP'),
+                    'end_date' => $fim->format('Y-m-d\TH:i:s.vP'),
+                    'sort' => 'date_approved',
+                    'criteria' => 'desc',
+                    'limit' => 50,
+                    'offset' => 0,
+                ]);
+        } catch (\Throwable $e) {
+            throw new \Exception("Falha de conexão ao buscar pagamentos no Mercado Pago: {$e->getMessage()}");
         }
 
-        $processados = 0;
-        $totalEncontrado = count($resultado->results ?? []);
+        if (!$resposta->successful()) {
+            throw new \Exception("Falha ao buscar pagamentos no Mercado Pago (HTTP {$resposta->status()}): {$resposta->body()}");
+        }
 
-        foreach ($resultado->results ?? [] as $payment) {
-            if ($payment->status !== 'approved') {
+        $resultados = $resposta->json('results') ?? [];
+
+        $processados = 0;
+        $totalEncontrado = count($resultados);
+
+        foreach ($resultados as $payment) {
+            if (($payment['status'] ?? null) !== 'approved') {
                 continue;
             }
 
             // Checagem rápida antes de montar os dados: evita trabalho
             // desnecessário para pagamentos já lançados (pelo webhook ou por
             // uma execução anterior deste polling).
-            if (ExtratoMaquina::where('id_end_to_end', (string) $payment->id)->exists()) {
+            if (ExtratoMaquina::where('id_end_to_end', (string) $payment['id'])->exists()) {
                 continue;
             }
 
-            \Log::info("[Polling Mercado Pago] Pagamento aprovado recebido: id={$payment->id}, credencial={$credencial->id_cred_api_pix}, valor={$payment->transaction_amount}, pos_id={$payment->pos_id}");
+            $posId = $payment['pos_id'] ?? null;
+            $serialNumber = $payment['point_of_interaction']['device']['serial_number'] ?? null;
+            \Log::info("[Polling Mercado Pago] Pagamento aprovado recebido: id={$payment['id']}, credencial={$credencial->id_cred_api_pix}, valor={$payment['transaction_amount']}, pos_id={$posId}, serial_number={$serialNumber}");
 
-            // NotificacaoService::montarDadosTransacao espera um array (mesmo
-            // formato de Http::get(...)->json(), usado pelo webhook), então
-            // convertemos o objeto tipado retornado pelo SDK antes de chamar.
-            $paymentArray = json_decode(json_encode($payment), true);
-
-            $dadoTransacao = NotificacaoService::montarDadosTransacao($paymentArray);
+            $dadoTransacao = NotificacaoService::montarDadosTransacao($payment);
             $resultadoProcessamento = NotificacaoService::processarPagamentoAprovado($dadoTransacao);
             $processados++;
 
-            \Log::info("[Polling Mercado Pago] Resultado do processamento do pagamento {$payment->id} (credencial {$credencial->id_cred_api_pix}): " . json_encode($resultadoProcessamento));
+            \Log::info("[Polling Mercado Pago] Resultado do processamento do pagamento {$payment['id']} (credencial {$credencial->id_cred_api_pix}): " . json_encode($resultadoProcessamento));
         }
 
         // Log de confirmação sempre presente, mesmo sem nada novo pra
