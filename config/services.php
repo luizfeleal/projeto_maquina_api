@@ -30,4 +30,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // E-mails (separados por vírgula) que recebem alerta quando uma devolução Pix é
+    // bloqueada por limite transacional insuficiente na Efí. Lido via config() em vez de
+    // env() direto no controller para continuar funcionando depois de `php artisan config:cache`.
+    'alerta_pix' => [
+        'email' => env('ALERTA_PIX_EMAIL'),
+    ],
+
 ];

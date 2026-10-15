@@ -61,13 +61,42 @@ class GestaoPixService
         ));
 
         $result = json_decode(curl_exec($curl), true);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
 
         $resposta = [
-            "result" => $result
+            "result" => $result,
+            "http_code" => $httpCode,
+            "rejeitado_por_limite" => self::identificarRejeicaoPorLimite($httpCode, $result),
         ];
 
         return $resposta;
-        
+
+    }
+
+    /**
+     * A Efí retorna HTTP 4xx com um corpo como
+     * {"nome": "...", "mensagem": "Você está tentando transferir R$ X. No momento,
+     * seu limite disponível para o dia de hoje é R$ 0,00..."} quando a devolução
+     * (um envio de Pix) esbarra no limite transacional diário da conta.
+     * Isolado aqui para não depender de string matching espalhado pelos controllers.
+     */
+    public static function identificarRejeicaoPorLimite(?int $httpCode, $result): bool
+    {
+        if ($httpCode === null || $httpCode < 400) {
+            return false;
+        }
+
+        $mensagem = '';
+        if (is_array($result)) {
+            $mensagem = ($result['mensagem'] ?? '') . ' ' . ($result['nome'] ?? '');
+        }
+
+        $mensagem = mb_strtolower($mensagem);
+
+        return str_contains($mensagem, 'limite transacional')
+            || str_contains($mensagem, 'limite disponível')
+            || str_contains($mensagem, 'limite_excedido')
+            || str_contains($mensagem, 'saldo_insuficiente');
     }
 }

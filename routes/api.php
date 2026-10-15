@@ -94,6 +94,11 @@ Route::group(['middleware' => ['apiJwt']], function(){
 
     // Reset de Aferição de Máquina
     Route::post('maquinas/{id}/reset-afericao', 'App\Http\Controllers\ResetAfericaoController@reset');
+
+    // Retentativa manual de devolução Pix (Efí) bloqueada por limite transacional
+    // insuficiente — só deve ser usada pela operação após confirmar a renovação/ajuste
+    // do limite diário na conta Efí (Parecer Técnico Efí).
+    Route::post('efi/devolucoes/retentar', 'App\Http\Controllers\Efi\DevolucaoPixController@retentar');
 });
 
 //Route::post('webhook/efi', 'App\Http\Controllers\Efi\Webhooks\WebhookController@processamento');
